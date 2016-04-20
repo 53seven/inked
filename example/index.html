@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+body {
+  font: 10px sans-serif;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.x.axis path {
+  display: none;
+}
+
+.line {
+  fill: none;
+  stroke: steelblue;
+  stroke-width: 1.5px;
+}
+</style>
+<body>
+
+<!-- scripts for resource loading -->
+<script src="https://d3js.org/d3-collection.v0.1.min.js"></script>
+<script src="https://d3js.org/d3-dispatch.v0.4.min.js"></script>
+<script src="https://d3js.org/d3-dsv.v0.3.min.js"></script>
+<script src="https://d3js.org/d3-request.v0.4.min.js"></script>
+
+<!-- scripts for time formatting -->
+<script src="https://d3js.org/d3-time.v0.2.min.js"></script>
+<script src="https://d3js.org/d3-time-format.v0.3.min.js"></script>
+
+<script type="" src="https://cdn.rawgit.com/53seven/d3-svg/master/build/d3-svg.min.js"></script>
+<script src="../build/537-base-chart.js"></script>
+<script>
+var TimeSeries = $537.TimeSeries;
+
+// create an svg
+var svg = d3_svg.create('body', {width: 700, height: 400});
+
+d3_request.json('./sample.json', function(err, raw) {
+  if (err) {
+    throw err;
+  }
+  var data = raw.req.buckets.map((d) => {
+    d.key = new Date(d.key);
+    return d;
+  });
+  var ts = new TimeSeries({
+    width: 700,
+    height: 400
+  });
+  ts
+    .margin({top: 20, right: 30, bottom: 20, left: 40})
+    .xVal(function(d) {
+      return d.key;
+    })
+    .yVal(function(d) {
+      return d.doc_count;
+    });
+
+  svg.datum(data);
+  ts.render(svg);
+
+  setTimeout(function() {
+    data.push({
+      key: new Date('2016-03-01'),
+      doc_count: 500
+    });
+    svg.datum(data);
+    ts.update(svg);
+  }, 1000);
+
+});
+
+
+</script>

@@ -1,0 +1,46 @@
+{
+  "name": "537-base-chart",
+  "version": "0.0.0",
+  "description": "d3 line chart plugin",
+  "keywords": [
+    "d3",
+    "plugin",
+    "line chart"
+  ],
+  "license": "MIT",
+  "main": "build/537-base-chart.js",
+  "jsnext:main": "index",
+  "homepage": "https://github.com/53seven/537-base-chart",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/53seven/537-base-chart.git"
+  },
+  "scripts": {
+    "build": "mkdir -p build && rollup -c rollup.config.js -o build/537-base-chart.js",
+    "minify": "uglifyjs build/537-base-chart.js -c -m -o build/537-base-chart.min.js",
+    "archive": "rm -f build/537-base-chart.zip && zip -j build/537-base-chart.zip -- LICENSE README.md build/537-base-chart.js build/537-base-chart.min.js",
+    "pretest": "npm run build",
+    "test": "faucet `find test -name '*-test.js'`",
+    "version": "npm run build && npm run minify && git add build/537-base-chart.js build/537-base-chart.min.js",
+    "prepublish": "npm run test && npm run minify && npm run archive"
+  },
+  "devDependencies": {
+    "d3-svg": "^0.2.0",
+    "faucet": "0.0",
+    "jsdom": "^8.1.0",
+    "rollup": "0.25.4",
+    "rollup-plugin-commonjs": "^2.2.1",
+    "rollup-plugin-node-resolve": "^1.4.0",
+    "tape": "4",
+    "tape-catch": "^1.0.4",
+    "uglify-js": "2"
+  },
+  "dependencies": {
+    "d3-array": "^0.7.1",
+    "d3-axis": "^0.3.0",
+    "d3-scale": "^0.6.1",
+    "d3-selection": "^0.7.0",
+    "d3-shape": "^0.5.1",
+    "lodash": "^4.6.1"
+  }
+}
