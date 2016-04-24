@@ -15,6 +15,9 @@
     "type": "git",
     "url": "https://github.com/53seven/537-base-chart.git"
   },
+  "watch": {
+    "build": "{index,src/}*.js"
+  },
   "scripts": {
     "build": "mkdir -p build && rollup -c rollup.config.js -o build/537-base-chart.js",
     "minify": "uglifyjs build/537-base-chart.js -c -m -o build/537-base-chart.min.js",
@@ -22,12 +25,14 @@
     "pretest": "npm run build",
     "test": "faucet `find test -name '*-test.js'`",
     "version": "npm run build && npm run minify && git add build/537-base-chart.js build/537-base-chart.min.js",
-    "prepublish": "npm run test && npm run minify && npm run archive"
+    "prepublish": "npm run test && npm run minify && npm run archive",
+    "watch": "npm-watch"
   },
   "devDependencies": {
     "d3-svg": "^0.2.0",
     "faucet": "0.0",
     "jsdom": "^8.1.0",
+    "npm-watch": "^0.1.4",
     "rollup": "0.25.4",
     "rollup-plugin-commonjs": "^2.2.1",
     "rollup-plugin-node-resolve": "^1.4.0",
@@ -41,6 +46,6 @@
     "d3-scale": "^0.6.1",
     "d3-selection": "^0.7.0",
     "d3-shape": "^0.5.1",
-    "lodash": "^4.6.1"
+    "lodash-es": "^4.11.1"
   }
 }

@@ -1,5 +1,7 @@
 // base_chart.js
 import * as d3_selection from 'd3-selection';
+import * as d3_svg from 'd3-svg';
+
 class BaseChart {
 
   constructor(opts) {
@@ -7,9 +9,13 @@ class BaseChart {
     this._width = opts.width || 0;
     this._height = opts.height || 0;
     this._margin = opts.margin || {top: 0, left:0, bottom: 0, right: 0};
+    this._el = opts.el || 'body';
+    this._root = opts.root || null;
+    this._data = opts.data || null;
+    this._title = opts.title || null;
   }
 
-  width(val) {
+  outerWidth(val) {
     if (!val) {
       return this._width;
     }
@@ -17,7 +23,7 @@ class BaseChart {
     return this;
   }
 
-  height(val) {
+  outerHeight(val) {
     if (!val) {
       return this._height;
     }
@@ -25,12 +31,26 @@ class BaseChart {
     return this;
   }
 
-  innerWidth() {
+  outerSize() {
+    return {
+      width: this.outerWidth(),
+      height: this.outerHeight()
+    };
+  }
+
+  width() {
     return this._width - this._margin.left - this._margin.right;
   }
 
-  innerHeight() {
+  height() {
     return this._height - this._margin.top - this._margin.bottom;
+  }
+
+  size() {
+    return {
+      width: this.width(),
+      height: this.height()
+    };
   }
 
   margin(val) {
@@ -48,38 +68,55 @@ class BaseChart {
     return this._g;
   }
 
-  data() {
-    return this._data;
+  root() {
+    return this._root;
   }
 
-  render(svg) {
+  title(val) {
+    if (!val) {
+      return this._title;
+    }
+    this._title = val;
+    return this;
+  }
+
+  data(val) {
+    if (!val) {
+      return this._data;
+    }
+    this._data = val;
+    return this;
+  }
+
+  render() {
     // base chart only needs to do one thing
     // and that is create the g element correctly
     // NOTE: no arrow function since we want the `this` (sigh)
-    var self = this;
-    svg.call((selection) => {
-      selection.each(function(data) {
-        // capture the data on the selection
-        self._data = data;
-        self._g = d3_selection.select(this)
-                  .append('g')
-                  .attr('transform', 'translate(' + self.margin().left + ',' + self.margin().top + ')');
-        self.plot(data);
-      });
-    });
-  }
+    if (!this._root) {
+      this._root = d3_selection.select(this._el)
+                        .append('svg')
+                        .attr('width', this.outerWidth())
+                        .attr('height', this.outerHeight());
+    } else {
+      this._root = d3_selection.select(this._root);
+    }
 
-  update(svg) {
-    var self = this;
-    svg.call((selection) => {
-      selection.each(function(data) {
-        // capture the data on the selection
-        self._data = data;
-        this._g = d3_selection.select(this).select('g');
+    // capture the data on the selection
+    this._g = this._root
+              .append('g')
+              .attr('transform', 'translate(' + this.margin().left + ',' + this.margin().top + ')');
 
-        self.plot(data);
-      });
-    });
+    // draw the chart title if we have one
+    if (this._title) {
+      this.g()
+        .append('text')
+        .attr('class', 'title')
+        .attr('dy', '-0.35em')
+        .text(this.title());
+    }
+
+    this.plot();
+
   }
 }
 
