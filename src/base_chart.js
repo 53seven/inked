@@ -1,6 +1,5 @@
 // base_chart.js
 import * as d3_selection from 'd3-selection';
-import * as d3_svg from 'd3-svg';
 
 class BaseChart {
 

@@ -868,8 +868,6 @@
 
     var bug44083 = typeof navigator !== "undefined" && /WebKit/.test(navigator.userAgent) ? -1 : 0;
 
-    var bug44083$1 = typeof navigator !== "undefined" && /WebKit/.test(navigator.userAgent) ? -1 : 0;
-
     class BaseChart {
 
       constructor(opts) {
@@ -1135,7 +1133,7 @@
       }
     };
 
-    function constant$2(x) {
+    function constant$1(x) {
       return function constant() {
         return x;
       };
@@ -1196,7 +1194,7 @@
     function line() {
       var x = pointX,
           y = pointY,
-          defined = constant$2(true),
+          defined = constant$1(true),
           context = null,
           curve = curveLinear,
           output = null;
@@ -1222,15 +1220,15 @@
       }
 
       line.x = function(_) {
-        return arguments.length ? (x = typeof _ === "function" ? _ : constant$2(+_), line) : x;
+        return arguments.length ? (x = typeof _ === "function" ? _ : constant$1(+_), line) : x;
       };
 
       line.y = function(_) {
-        return arguments.length ? (y = typeof _ === "function" ? _ : constant$2(+_), line) : y;
+        return arguments.length ? (y = typeof _ === "function" ? _ : constant$1(+_), line) : y;
       };
 
       line.defined = function(_) {
-        return arguments.length ? (defined = typeof _ === "function" ? _ : constant$2(!!_), line) : defined;
+        return arguments.length ? (defined = typeof _ === "function" ? _ : constant$1(!!_), line) : defined;
       };
 
       line.curve = function(_) {
@@ -1270,7 +1268,7 @@
     // According to https://en.wikipedia.org/wiki/Cubic_Hermite_spline#Representations
     // "you can express cubic Hermite interpolation in terms of cubic Bézier curves
     // with respect to the four values p0, p0 + m0 / 3, p1 - m1 / 3, p1".
-    function point$5(that, t0, t1) {
+    function point$4(that, t0, t1) {
       var x0 = that._x0,
           y0 = that._y0,
           x1 = that._x1,
@@ -1299,7 +1297,7 @@
       lineEnd: function() {
         switch (this._point) {
           case 2: this._context.lineTo(this._x1, this._y1); break;
-          case 3: point$5(this, this._t0, slope2(this, this._t0)); break;
+          case 3: point$4(this, this._t0, slope2(this, this._t0)); break;
         }
         if (this._line || (this._line !== 0 && this._point === 1)) this._context.closePath();
         this._line = 1 - this._line;
@@ -1312,8 +1310,8 @@
         switch (this._point) {
           case 0: this._point = 1; this._line ? this._context.lineTo(x, y) : this._context.moveTo(x, y); break;
           case 1: this._point = 2; break;
-          case 2: this._point = 3; point$5(this, slope2(this, t1 = slope3(this, x, y)), t1); break;
-          default: point$5(this, this._t0, t1 = slope3(this, x, y)); break;
+          case 2: this._point = 3; point$4(this, slope2(this, t1 = slope3(this, x, y)), t1); break;
+          default: point$4(this, this._t0, t1 = slope3(this, x, y)); break;
         }
 
         this._x0 = this._x1, this._x1 = x;
@@ -1398,7 +1396,7 @@
 
     }
 
-    function ascending$3(a, b) {
+    function ascending$2(a, b) {
       return a < b ? -1 : a > b ? 1 : a >= b ? 0 : NaN;
     }
 
@@ -1430,11 +1428,11 @@
 
     function ascendingComparator(f) {
       return function(d, x) {
-        return ascending$3(f(d), x);
+        return ascending$2(f(d), x);
       };
     }
 
-    var ascendingBisect = bisector(ascending$3);
+    var ascendingBisect = bisector(ascending$2);
     var bisectRight = ascendingBisect.right;
 
     function d3_extent(array, f) {
@@ -2223,7 +2221,7 @@
       }
     }));
 
-    function constant$4(x) {
+    function constant$3(x) {
       return function() {
         return x;
       };
@@ -2243,18 +2241,18 @@
 
     function interpolateHue(a, b) {
       var d = b - a;
-      return d ? linear$1(a, d > 180 || d < -180 ? d - 360 * Math.round(d / 360) : d) : constant$4(isNaN(a) ? b : a);
+      return d ? linear$1(a, d > 180 || d < -180 ? d - 360 * Math.round(d / 360) : d) : constant$3(isNaN(a) ? b : a);
     }
 
     function gamma(y) {
       return (y = +y) === 1 ? nogamma : function(a, b) {
-        return b - a ? exponential(a, b, y) : constant$4(isNaN(a) ? b : a);
+        return b - a ? exponential(a, b, y) : constant$3(isNaN(a) ? b : a);
       };
     }
 
     function nogamma(a, b) {
       var d = b - a;
-      return d ? linear$1(a, d) : constant$4(isNaN(a) ? b : a);
+      return d ? linear$1(a, d) : constant$3(isNaN(a) ? b : a);
     }
 
     var rgb$1 = (function gamma$$(y) {
@@ -2396,7 +2394,7 @@
 
     function interpolateValue(a, b) {
       var t = typeof b, c;
-      return b == null || t === "boolean" ? constant$4(b)
+      return b == null || t === "boolean" ? constant$3(b)
           : (t === "number" ? reinterpolate
           : t === "string" ? ((c = color(b)) ? (b = c, rgb$1) : string)
           : b instanceof color ? rgb$1
@@ -2454,7 +2452,7 @@
       return interpolateCubehelixLong;
     })(1);
 
-    function constant$5(x) {
+    function constant$4(x) {
       return function() {
         return x;
       };
@@ -2469,7 +2467,7 @@
     function deinterpolate(a, b) {
       return (b -= (a = +a))
           ? function(x) { return (x - a) / b; }
-          : constant$5(b);
+          : constant$4(b);
     }
 
     function deinterpolateClamp(deinterpolate) {
@@ -4796,12 +4794,12 @@
      * The `this` value is used if it's the global object to avoid Greasemonkey's
      * restricted `window` object, otherwise the `window` object is used.
      */
-    var root$2 = freeGlobal ||
+    var root$1 = freeGlobal ||
       ((freeWindow !== (thisGlobal && thisGlobal.window)) && freeWindow) ||
         freeSelf || thisGlobal || Function('return this')();
 
     /* Built-in method references that are verified to be native. */
-    var WeakMap = getNative(root$2, 'WeakMap');
+    var WeakMap = getNative(root$1, 'WeakMap');
 
     /** Used to store function metadata. */
     var metaMap = WeakMap && new WeakMap;
@@ -4886,7 +4884,7 @@
           Ctor = createCtorWrapper(func);
 
       function wrapper() {
-        var fn = (this && this !== root$2 && this instanceof wrapper) ? Ctor : func;
+        var fn = (this && this !== root$1 && this instanceof wrapper) ? Ctor : func;
         return fn.apply(isBind ? thisArg : this, arguments);
       }
       return wrapper;
@@ -5608,7 +5606,7 @@
         if (isAry && ary < length) {
           args.length = ary;
         }
-        if (this && this !== root$2 && this instanceof wrapper) {
+        if (this && this !== root$1 && this instanceof wrapper) {
           fn = Ctor || createCtorWrapper(fn);
         }
         return fn.apply(thisBinding, args);
@@ -5648,7 +5646,7 @@
             func, bitmask, createHybridWrapper, wrapper.placeholder, undefined,
             args, holders, undefined, undefined, arity - length);
         }
-        var fn = (this && this !== root$2 && this instanceof wrapper) ? Ctor : func;
+        var fn = (this && this !== root$1 && this instanceof wrapper) ? Ctor : func;
         return apply(fn, this, args);
       }
       return wrapper;
@@ -5680,7 +5678,7 @@
             leftIndex = -1,
             leftLength = partials.length,
             args = Array(leftLength + argsLength),
-            fn = (this && this !== root$2 && this instanceof wrapper) ? Ctor : func;
+            fn = (this && this !== root$1 && this instanceof wrapper) ? Ctor : func;
 
         while (++leftIndex < leftLength) {
           args[leftIndex] = partials[leftIndex];
@@ -6507,7 +6505,7 @@
     });
 
     /** Built-in value references. */
-    var Reflect = root$2.Reflect;
+    var Reflect = root$1.Reflect;
 
     /**
      * Converts `iterator` to an array.
@@ -6739,7 +6737,7 @@
     Hash.prototype = nativeCreate ? nativeCreate(null) : objectProto$14;
 
     /* Built-in method references that are verified to be native. */
-    var Map$1 = getNative(root$2, 'Map');
+    var Map$1 = getNative(root$1, 'Map');
 
     /**
      * Removes all key-value entries from the map.
@@ -7096,7 +7094,7 @@
     memoize.Cache = MapCache;
 
     /** Built-in value references. */
-    var Symbol = root$2.Symbol;
+    var Symbol = root$1.Symbol;
 
     /** Used as references for various `Number` constants. */
     var INFINITY$1 = 1 / 0;
@@ -7608,17 +7606,17 @@
      * bound('hi');
      * // => 'hiya fred!'
      */
-    var bindKey$2 = rest(function(object, key, partials) {
+    var bindKey$1 = rest(function(object, key, partials) {
       var bitmask = BIND_FLAG$7 | BIND_KEY_FLAG$4;
       if (partials.length) {
-        var holders = replaceHolders(partials, getPlaceholder(bindKey$2));
+        var holders = replaceHolders(partials, getPlaceholder(bindKey$1));
         bitmask |= PARTIAL_FLAG$3;
       }
       return createWrapper(key, bitmask, object, partials, holders);
     });
 
     // Assign default placeholders.
-    bindKey$2.placeholder = {};
+    bindKey$1.placeholder = {};
 
     /**
      * The base implementation of `_.slice` without an iteratee call guard.
@@ -8428,13 +8426,13 @@
     }
 
     /* Built-in method references that are verified to be native. */
-    var DataView = getNative(root$2, 'DataView');
+    var DataView = getNative(root$1, 'DataView');
 
     /* Built-in method references that are verified to be native. */
-    var Promise = getNative(root$2, 'Promise');
+    var Promise = getNative(root$1, 'Promise');
 
     /* Built-in method references that are verified to be native. */
-    var Set$1 = getNative(root$2, 'Set');
+    var Set$1 = getNative(root$1, 'Set');
 
     var mapTag$1 = '[object Map]';
     var objectTag$1 = '[object Object]';
@@ -8523,7 +8521,7 @@
     }
 
     /** Built-in value references. */
-    var Uint8Array = root$2.Uint8Array;
+    var Uint8Array = root$1.Uint8Array;
 
     /**
      * Creates a clone of `arrayBuffer`.
@@ -8780,7 +8778,7 @@
      * getter() === object;
      * // => true
      */
-    function constant$6(value) {
+    function constant$5(value) {
       return function() {
         return value;
       };
@@ -8808,7 +8806,7 @@
       : undefined;
 
     /** Built-in value references. */
-    var Buffer = moduleExports ? root$2.Buffer : undefined;
+    var Buffer = moduleExports ? root$1.Buffer : undefined;
 
     /**
      * Checks if `value` is a buffer.
@@ -8827,7 +8825,7 @@
      * _.isBuffer(new Uint8Array(2));
      * // => false
      */
-    var isBuffer = !Buffer ? constant$6(false) : function(value) {
+    var isBuffer = !Buffer ? constant$5(false) : function(value) {
       return value instanceof Buffer;
     };
 
@@ -13514,7 +13512,7 @@
      */
     var invert = createInverter(function(result, value, key) {
       result[value] = key;
-    }, constant$6(identity$6));
+    }, constant$5(identity$6));
 
     /** Used for built-in method references. */
     var objectProto$26 = Object.prototype;
@@ -13912,7 +13910,7 @@
     }
 
     /* Built-in method references for those with the same name as other `lodash` methods. */
-    var nativeIsFinite = root$2.isFinite;
+    var nativeIsFinite = root$1.isFinite;
 
     /**
      * Checks if `value` is a finite primitive number.
@@ -16035,7 +16033,7 @@
     var reHasHexPrefix = /^0x/i;
 
     /* Built-in method references for those with the same name as other `lodash` methods. */
-    var nativeParseInt = root$2.parseInt;
+    var nativeParseInt = root$1.parseInt;
 
     /**
      * Converts `string` to an integer of the specified radix. If `radix` is
@@ -17002,7 +17000,7 @@
      * console.log(evens);
      * // => [2, 4]
      */
-    function remove$2(array, predicate) {
+    function remove$1(array, predicate) {
       var result = [];
       if (!(array && array.length)) {
         return result;
@@ -20225,7 +20223,7 @@
       flattenDepth, fromPairs, head, indexOf, initial,
       intersection, intersectionBy, intersectionWith, join, last,
       lastIndexOf, nth, pull, pullAll, pullAllBy,
-      pullAllWith, pullAt, remove: remove$2, reverse: reverse$1, slice: slice$4,
+      pullAllWith, pullAt, remove: remove$1, reverse: reverse$1, slice: slice$4,
       sortedIndex, sortedIndexBy, sortedIndexOf, sortedLastIndex, sortedLastIndexBy,
       sortedLastIndexOf, sortedUniq, sortedUniqBy, tail, take,
       takeRight, takeRightWhile, takeWhile, union, unionBy,
@@ -20248,7 +20246,7 @@
     };
 
     var func = {
-      after, ary, before, bind: bind$1, bindKey: bindKey$2,
+      after, ary, before, bind: bind$1, bindKey: bindKey$1,
       curry, curryRight, debounce, defer, delay,
       flip, memoize, negate, once, overArgs,
       partial, partialRight, rearg, rest, spread,
@@ -20309,7 +20307,7 @@
     };
 
     var util = {
-      attempt, bindAll, cond, conforms, constant: constant$6,
+      attempt, bindAll, cond, conforms, constant: constant$5,
       flow, flowRight, identity: identity$6, iteratee, matches,
       matchesProperty, method, methodOf, mixin, noop: noop$1,
       nthArg, over, overEvery, overSome, property,
@@ -21181,8 +21179,6 @@
 
 
         x.domain(data.map(x.val()));
-
-        console.log(y.m())
 
         this.g().append('g')
             .attr('class', 'x axis')

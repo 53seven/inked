@@ -1,7 +1,5 @@
 // histogram.js
 import {default as Bivariate} from './bivariate';
-import {default as Measure} from './measure';
-import * as d3_array from 'd3-array';
 import * as d3_scale from 'd3-scale';
 import * as d3_axis from 'd3-axis';
 
@@ -30,8 +28,6 @@ class Histogram extends Bivariate {
 
 
     x.domain(data.map(x.val()));
-
-    console.log(y.m())
 
     this.g().append('g')
         .attr('class', 'x axis')
