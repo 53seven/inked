@@ -117,6 +117,10 @@ class BaseChart {
     this.plot();
   }
 
+  update() {
+    // update is called when the underlying data has changed
+  }
+
   // utility function to hide the kludge
   _translate() {
     return 'translate(' + this.margin().left + ',' + this.margin().top + ')';

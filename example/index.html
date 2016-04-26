@@ -40,8 +40,6 @@ body {
 var TimeSeries = $537.TimeSeries;
 
 // create an svg
-var svg = d3_svg.create('body', {width: 700, height: 400});
-
 d3_request.json('./sample.json', function(err, raw) {
   if (err) {
     throw err;
@@ -56,23 +54,17 @@ d3_request.json('./sample.json', function(err, raw) {
   });
   ts
     .margin({top: 20, right: 30, bottom: 20, left: 40})
-    .xVal(function(d) {
-      return d.key;
-    })
-    .yVal(function(d) {
-      return d.doc_count;
-    });
-
-  svg.datum(data);
-  ts.render(svg);
+    .xVal('key')
+    .yVal('doc_count')
+    .data(data)
+    .render();
 
   setTimeout(function() {
     data.push({
       key: new Date('2016-03-01'),
       doc_count: 500
     });
-    svg.datum(data);
-    ts.update(svg);
+    ts.update();
   }, 1000);
 
 });
