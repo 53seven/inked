@@ -1,13 +1,13 @@
 // bivariate.js
 import {default as BaseChart} from './base_chart';
-import * as _ from 'lodash-es';
+import {default as Measure} from './measure';
 
 class Bivariate extends BaseChart {
 
   constructor(opts) {
     super(opts);
-    this._x_val = function(d) { return d; };
-    this._y_val = function(d) { return d; };
+    this.x(opts.x || new Measure());
+    this.y(opts.y || new Measure());
   }
 
   x(val) {
@@ -20,9 +20,9 @@ class Bivariate extends BaseChart {
 
   xVal(val) {
     if (!val) {
-      return this._x_val;
+      return this._x.val();
     }
-    this._x_val = typeof val === 'string' ? function(d) { return _.at(d, val)[0]; } : val;
+    this._x.val(val);
     return this;
   }
 
@@ -36,20 +36,11 @@ class Bivariate extends BaseChart {
 
   yVal(val) {
     if (!val) {
-      return this._y_val;
+      return this._y.val();
     }
-    this._y_val = typeof val === 'string' ? function(d) { return _.at(d, val)[0]; } : val;
+    this._y.val(val);
     return this;
   }
-
-  yAxisLabel(val) {
-    if (!val) {
-      return this._y_axis_label;
-    }
-    this._y_axis_label = val;
-    return this;
-  }
-
 
 }
 

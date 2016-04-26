@@ -971,8 +971,8 @@
 
         // capture the data on the selection
         this._g = this._root
-                  .append('g')
-                  .attr('transform', 'translate(' + this.margin().left + ',' + this.margin().top + ')');
+                    .append('g')
+                    .attr('transform', this._translate());
 
         // draw the chart title if we have one
         if (this._title) {
@@ -984,7 +984,11 @@
         }
 
         this.plot();
+      }
 
+      // utility function to hide the kludge
+      _translate() {
+        return 'translate(' + this.margin().left + ',' + this.margin().top + ')';
       }
     }
 
@@ -21035,12 +21039,87 @@
       lodash.prototype[iteratorSymbol$1] = seq.toIterator;
     }
 
+    // A measure class acts as a bridge between a data's vals and scales
+    // Generally, this makes it easy to apply the same scale to several charts
+    class Measure {
+
+      constructor(opts) {
+        opts = opts || {};
+        this.scale(opts.scale || linear());
+        this.val(opts.val || function(d) { return d; });
+        this.round(opts.round || 1);
+      }
+
+      // val on the data
+      val(val) {
+        if (!val) {
+          return this._val;
+        }
+        this._val = typeof val === 'string' ? function(d) { return at(d, val)[0]; } : val;
+        return this;
+      }
+
+      scale(val) {
+        if (!val) {
+          return this._scale;
+        }
+        this._scale = val;
+        return this;
+      }
+
+      domain(val) {
+        if (!val) {
+          return this._scale.domain();
+        }
+        this._scale.domain(val);
+        return this;
+      }
+
+      range(val) {
+        if (!val) {
+          return this._scale.range();
+        }
+        this._scale.range(val);
+        return this;
+      }
+
+      // amount to round domain buy
+      round(val) {
+        if (!val) {
+          return this._round;
+        }
+        this._round = val;
+        return this;
+      }
+
+      m() {
+        var self = this;
+        // D3 does some binding magic => cannot trust `this`
+        return function(d, i) {
+          return self.scale()(self.val()(d, i));
+        };
+      }
+
+      // determines the extent of the given data
+      // useful for figuring out a global min/max,
+      // then displaying subsets on various charts
+      fit(data) {
+        var domain = d3_extent(data, this.val());
+        // round out the domain as needed
+        domain[0] = Math.floor(domain[0] / this.round()) * this.round();
+        domain[1] = Math.ceil(domain[1] / this.round()) * this.round();
+        this.scale().domain(domain);
+        return this;
+      }
+
+    }
+
     class Bivariate extends BaseChart {
 
       constructor(opts) {
         super(opts);
-        this._x_val = function(d) { return d; };
-        this._y_val = function(d) { return d; };
+        this.x(opts.x || new Measure());
+        this.y(opts.y || new Measure());
       }
 
       x(val) {
@@ -21053,9 +21132,9 @@
 
       xVal(val) {
         if (!val) {
-          return this._x_val;
+          return this._x.val();
         }
-        this._x_val = typeof val === 'string' ? function(d) { return at(d, val)[0]; } : val;
+        this._x.val(val);
         return this;
       }
 
@@ -21069,20 +21148,11 @@
 
       yVal(val) {
         if (!val) {
-          return this._y_val;
+          return this._y.val();
         }
-        this._y_val = typeof val === 'string' ? function(d) { return at(d, val)[0]; } : val;
+        this._y.val(val);
         return this;
       }
-
-      yAxisLabel(val) {
-        if (!val) {
-          return this._y_axis_label;
-        }
-        this._y_axis_label = val;
-        return this;
-      }
-
 
     }
 
@@ -21095,21 +21165,24 @@
       plot() {
         var data = this.data();
 
-        var x = band()
+        var _x = band()
             .rangeRound([0, this.width()])
             .paddingInner(0.1);
+        this.x().scale(_x);
+        var x = this.x();
 
-        var y = linear()
-            .range([this.height(), 0]);
+        var y = this.y().range([this.height(), 0]);
 
         var xAxis = axisBottom()
-            .scale(x);
+            .scale(x.scale());
 
         var yAxis = axisLeft()
-            .scale(y);
+            .scale(y.scale());
 
-        x.domain(data.map(this._x_val));
-        y.domain([0, d3_max(data, this._y_val)]);
+
+        x.domain(data.map(x.val()));
+
+        console.log(y.m())
 
         this.g().append('g')
             .attr('class', 'x axis')
@@ -21130,10 +21203,10 @@
             .data(data)
           .enter().append('rect')
             .attr('class', 'bar')
-            .attr('x', (d) => { return x(this._x_val(d)); })
-            .attr('y', (d) => { return y(this._y_val(d)); })
-            .attr('height', (d) => { return this.height() - y(this._y_val(d)); })
-            .attr('width', x.bandwidth());
+            .attr('x', x.m())
+            .attr('y', y.m())
+            .attr('height', (d) => { return this.height() - y.m()(d); })
+            .attr('width', x.scale().bandwidth());
       }
 
     }
@@ -21191,5 +21264,6 @@
     exports.TimeSeries = TimeSeries;
     exports.Histogram = Histogram;
     exports.ScatterChart = ScatterChart;
+    exports.Measure = Measure;
 
 }));

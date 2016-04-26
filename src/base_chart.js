@@ -103,8 +103,8 @@ class BaseChart {
 
     // capture the data on the selection
     this._g = this._root
-              .append('g')
-              .attr('transform', 'translate(' + this.margin().left + ',' + this.margin().top + ')');
+                .append('g')
+                .attr('transform', this._translate());
 
     // draw the chart title if we have one
     if (this._title) {
@@ -116,7 +116,11 @@ class BaseChart {
     }
 
     this.plot();
+  }
 
+  // utility function to hide the kludge
+  _translate() {
+    return 'translate(' + this.margin().left + ',' + this.margin().top + ')';
   }
 }
 
