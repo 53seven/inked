@@ -70,8 +70,10 @@ class Measure {
   fit(data) {
     var domain = d3_array.extent(data, this.val());
     // round out the domain as needed
-    domain[0] = Math.floor(domain[0] / this.round()) * this.round();
-    domain[1] = Math.ceil(domain[1] / this.round()) * this.round();
+    if (this.round() !== false) {
+      domain[0] = Math.floor(domain[0] / this.round()) * this.round();
+      domain[1] = Math.ceil(domain[1] / this.round()) * this.round();
+    }
     this.scale().domain(domain);
     return this;
   }

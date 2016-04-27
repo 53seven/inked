@@ -13,20 +13,20 @@ class ScatterChart extends Bivariate {
   plot() {
     var data = this.data();
 
-    var x = d3_scale.scaleLinear()
-        .range([0, this.width()]);
+    var x = this.x();
+    x.range([0, this.width()]);
 
-    var y = d3_scale.scaleLinear()
-        .range([this.height(), 0]);
+    var y = this.y();
+    y.range([this.height(), 0]);
 
     var xAxis = d3_axis.axisBottom()
-        .scale(x);
+        .scale(x.scale());
 
     var yAxis = d3_axis.axisLeft()
-        .scale(y);
+        .scale(y.scale());
 
-    x.domain(d3_extent(data, this._x_val));
-    y.domain(d3_extent(data, this._y_val));
+    x.fit(data);
+    y.fit(data);
 
     this.g().append('g')
         .attr('class', 'x axis')
@@ -45,9 +45,27 @@ class ScatterChart extends Bivariate {
 
     this.g().selectAll('circle.point').data(data).enter()
         .append('circle').attr('class', 'point')
-        .attr('r', 1)
-        .attr('cx', (d) => { return x(this._x_val(d)); })
-        .attr('cy', (d) => { return y(this._y_val(d)); });
+        .attr('r', this.r())
+        .attr('fill', this.fill())
+        .attr('cx', x.m())
+        .attr('cy', y.m());
+  }
+
+  r(val)  {
+    if (!val) {
+      return this._r;
+    }
+    this._r = val;
+    return this;
+  }
+
+  fill(val) {
+    if (!val) {
+      console.log(this._fill);
+      return this._fill;
+    }
+    this._fill = val;
+    return this;
   }
 
 }

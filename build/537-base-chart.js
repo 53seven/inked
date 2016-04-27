@@ -17761,7 +17761,7 @@
     var ascendingBisect = bisector(ascending$1);
     var bisectRight = ascendingBisect.right;
 
-    function d3_extent(array, f) {
+    function extent(array, f) {
       var i = -1,
           n = array.length,
           a,
@@ -20474,10 +20474,12 @@
       // useful for figuring out a global min/max,
       // then displaying subsets on various charts
       fit(data) {
-        var domain = d3_extent(data, this.val());
+        var domain = extent(data, this.val());
         // round out the domain as needed
-        domain[0] = Math.floor(domain[0] / this.round()) * this.round();
-        domain[1] = Math.ceil(domain[1] / this.round()) * this.round();
+        if (this.round() !== false) {
+          domain[0] = Math.floor(domain[0] / this.round()) * this.round();
+          domain[1] = Math.ceil(domain[1] / this.round()) * this.round();
+        }
         this.scale().domain(domain);
         return this;
       }
@@ -21144,20 +21146,20 @@
       plot() {
         var data = this.data();
 
-        var x = linear()
-            .range([0, this.width()]);
+        var x = this.x();
+        x.range([0, this.width()]);
 
-        var y = linear()
-            .range([this.height(), 0]);
+        var y = this.y();
+        y.range([this.height(), 0]);
 
         var xAxis = axisBottom()
-            .scale(x);
+            .scale(x.scale());
 
         var yAxis = axisLeft()
-            .scale(y);
+            .scale(y.scale());
 
-        x.domain(d3_extent(data, this._x_val));
-        y.domain(d3_extent(data, this._y_val));
+        x.fit(data);
+        y.fit(data);
 
         this.g().append('g')
             .attr('class', 'x axis')
@@ -21176,9 +21178,27 @@
 
         this.g().selectAll('circle.point').data(data).enter()
             .append('circle').attr('class', 'point')
-            .attr('r', 1)
-            .attr('cx', (d) => { return x(this._x_val(d)); })
-            .attr('cy', (d) => { return y(this._y_val(d)); });
+            .attr('r', this.r())
+            .attr('fill', this.fill())
+            .attr('cx', x.m())
+            .attr('cy', y.m());
+      }
+
+      r(val)  {
+        if (!val) {
+          return this._r;
+        }
+        this._r = val;
+        return this;
+      }
+
+      fill(val) {
+        if (!val) {
+          console.log(this._fill);
+          return this._fill;
+        }
+        this._fill = val;
+        return this;
       }
 
     }
