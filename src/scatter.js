@@ -1,7 +1,5 @@
 // histogram.js
 import {default as Bivariate} from './bivariate';
-import {max as d3_max, extent as d3_extent} from 'd3-array';
-import * as d3_scale from 'd3-scale';
 import * as d3_axis from 'd3-axis';
 
 class ScatterChart extends Bivariate {
