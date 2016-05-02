@@ -1,11 +1,12 @@
 // histogram.js
 import {default as Bivariate} from './bivariate';
-import * as d3_axis from 'd3-axis';
+import {default as Axes} from './axes';
 
 class ScatterChart extends Bivariate {
 
   constructor(opts) {
     super(opts);
+    this._axes = new Axes(this);
   }
 
   plot() {
@@ -17,36 +18,29 @@ class ScatterChart extends Bivariate {
     var y = this.y();
     y.range([this.height(), 0]);
 
-    var xAxis = d3_axis.axisBottom()
-        .scale(x.scale());
-
-    var yAxis = d3_axis.axisLeft()
-        .scale(y.scale());
-
     x.fit(data);
     y.fit(data);
 
-    this.g().append('g')
-        .attr('class', 'x axis')
-        .attr('transform', 'translate(0,' + this.height() + ')')
-        .call(xAxis);
+    var circles = this.g().selectAll('circle.point').data(data);
 
-    this.g().append('g')
-        .attr('class', 'y axis')
-        .call(yAxis)
-      .append('text')
-        .attr('transform', 'rotate(-90)')
-        .attr('y', 6)
-        .attr('dy', '.71em')
-        .style('text-anchor', 'end')
-        .text(this._y_axis_label);
-
-    this.g().selectAll('circle.point').data(data).enter()
+    circles.enter()
         .append('circle').attr('class', 'point')
         .attr('r', this.r())
         .attr('fill', this.fill())
         .attr('cx', x.m())
         .attr('cy', y.m());
+
+
+    circles.transition()
+        .attr('r', this.r())
+        .attr('fill', this.fill())
+        .attr('cx', x.m())
+        .attr('cy', y.m());
+  }
+
+  decorate() {
+    this._axes.plotLeft(this.y());
+    this._axes.plotBottom(this.x());
   }
 
   r(val)  {
@@ -59,7 +53,6 @@ class ScatterChart extends Bivariate {
 
   fill(val) {
     if (!val) {
-      console.log(this._fill);
       return this._fill;
     }
     this._fill = val;

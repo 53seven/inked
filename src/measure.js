@@ -11,12 +11,18 @@ class Measure {
     opts = opts || {};
     this.scale(opts.scale || d3_scale.scaleLinear());
     this.val(opts.val || function(d) { return d; });
-    this.round(opts.round || 1);
+    this.round(opts.round || false);
+    if (opts.range) {
+      this.range(opts.range);
+    }
+    if (opts.domain) {
+      this.domain(opts.domain);
+    }
   }
 
   // val on the data
   val(val) {
-    if (!val) {
+    if (_.isUndefined(val)) {
       return this._val;
     }
     this._val = typeof val === 'string' ? function(d) { return _.at(d, val)[0]; } : val;
@@ -24,7 +30,7 @@ class Measure {
   }
 
   scale(val) {
-    if (!val) {
+    if (_.isUndefined(val)) {
       return this._scale;
     }
     this._scale = val;
@@ -32,7 +38,7 @@ class Measure {
   }
 
   domain(val) {
-    if (!val) {
+    if (_.isUndefined(val)) {
       return this._scale.domain();
     }
     this._scale.domain(val);
@@ -40,7 +46,7 @@ class Measure {
   }
 
   range(val) {
-    if (!val) {
+    if (_.isUndefined(val)) {
       return this._scale.range();
     }
     this._scale.range(val);
@@ -49,18 +55,22 @@ class Measure {
 
   // amount to round domain buy
   round(val) {
-    if (!val) {
+    if (_.isUndefined(val)) {
       return this._round;
     }
     this._round = val;
     return this;
   }
 
+  eval(d, i) {
+    return this.scale()(this.val()(d, i));
+  }
+
   m() {
     var self = this;
     // D3 does some binding magic => cannot trust `this`
     return function(d, i) {
-      return self.scale()(self.val()(d, i));
+      return self.eval(d, i);
     };
   }
 
@@ -74,7 +84,7 @@ class Measure {
       domain[0] = Math.floor(domain[0] / this.round()) * this.round();
       domain[1] = Math.ceil(domain[1] / this.round()) * this.round();
     }
-    this.scale().domain(domain);
+    this.domain(domain);
     return this;
   }
 

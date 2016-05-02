@@ -1,5 +1,9 @@
 // base_chart.js
 import * as d3_selection from 'd3-selection';
+import * as d3_trans from 'd3-transition';
+
+// we need this to stop rollup from tree shaking...
+var t = d3_trans.transition().duration(500);
 
 class BaseChart {
 
@@ -114,11 +118,15 @@ class BaseChart {
         .text(this.title());
     }
 
+    // plot should draw/update the data
     this.plot();
+    // and decorate should draw/update non data elements (such as axes)
+    this.decorate();
   }
 
   update() {
-    // update is called when the underlying data has changed
+    this.plot();
+    this.decorate();
   }
 
   // utility function to hide the kludge
