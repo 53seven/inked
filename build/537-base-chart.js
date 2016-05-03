@@ -980,7 +980,7 @@
       restart: function(callback, delay, time) {
         if (typeof callback !== "function") throw new TypeError("callback is not a function");
         time = (time == null ? now() : +time) + (delay == null ? 0 : +delay);
-        if (!this._next && taskTail !== this) {
+        if (!this._call) {
           if (taskTail) taskTail._next = this;
           else taskHead = this;
           taskTail = this;
@@ -1788,7 +1788,7 @@
     })(1);
 
     // TODO sparse arrays?
-    function array(a, b) {
+    function interpolateArray(a, b) {
       var x = [],
           c = [],
           na = a ? a.length : 0,
@@ -1908,7 +1908,7 @@
           : (t === "number" ? reinterpolate
           : t === "string" ? ((c = color(b)) ? (b = c, interpolateRgb) : interpolateString)
           : b instanceof color ? interpolateRgb
-          : Array.isArray(b) ? array
+          : Array.isArray(b) ? interpolateArray
           : object)(a, b);
     }
 
@@ -2897,17 +2897,182 @@
         this.plot();
         // and decorate should draw/update non data elements (such as axes)
         this.decorate();
+        return this;
       }
 
       update() {
         this.plot();
         this.decorate();
+        return this;
       }
 
       // utility function to hide the kludge
       _translate() {
         return 'translate(' + this.margin().left + ',' + this.margin().top + ')';
       }
+    }
+
+    /**
+     * Checks if `value` is object-like. A value is object-like if it's not `null`
+     * and has a `typeof` result of "object".
+     *
+     * @static
+     * @memberOf _
+     * @since 4.0.0
+     * @category Lang
+     * @param {*} value The value to check.
+     * @returns {boolean} Returns `true` if `value` is object-like, else `false`.
+     * @example
+     *
+     * _.isObjectLike({});
+     * // => true
+     *
+     * _.isObjectLike([1, 2, 3]);
+     * // => true
+     *
+     * _.isObjectLike(_.noop);
+     * // => false
+     *
+     * _.isObjectLike(null);
+     * // => false
+     */
+    function isObjectLike(value) {
+      return !!value && typeof value == 'object';
+    }
+
+    /** `Object#toString` result references. */
+    var symbolTag = '[object Symbol]';
+
+    /** Used for built-in method references. */
+    var objectProto = Object.prototype;
+
+    /**
+     * Used to resolve the
+     * [`toStringTag`](http://ecma-international.org/ecma-262/6.0/#sec-object.prototype.tostring)
+     * of values.
+     */
+    var objectToString = objectProto.toString;
+
+    /**
+     * Checks if `value` is classified as a `Symbol` primitive or object.
+     *
+     * @static
+     * @memberOf _
+     * @since 4.0.0
+     * @category Lang
+     * @param {*} value The value to check.
+     * @returns {boolean} Returns `true` if `value` is correctly classified,
+     *  else `false`.
+     * @example
+     *
+     * _.isSymbol(Symbol.iterator);
+     * // => true
+     *
+     * _.isSymbol('abc');
+     * // => false
+     */
+    function isSymbol(value) {
+      return typeof value == 'symbol' ||
+        (isObjectLike(value) && objectToString.call(value) == symbolTag);
+    }
+
+    /** Used as references for various `Number` constants. */
+    var NAN = 0 / 0;
+
+    /**
+     * The base implementation of `_.toNumber` which doesn't ensure correct
+     * conversions of binary, hexadecimal, or octal string values.
+     *
+     * @private
+     * @param {*} value The value to process.
+     * @returns {number} Returns the number.
+     */
+    function baseToNumber(value) {
+      if (typeof value == 'number') {
+        return value;
+      }
+      if (isSymbol(value)) {
+        return NAN;
+      }
+      return +value;
+    }
+
+    /**
+     * Checks if `value` is a global object.
+     *
+     * @private
+     * @param {*} value The value to check.
+     * @returns {null|Object} Returns `value` if it's a global object, else `null`.
+     */
+    function checkGlobal(value) {
+      return (value && value.Object === Object) ? value : null;
+    }
+
+    /** Used to determine if values are of the language type `Object`. */
+    var objectTypes = {
+      'function': true,
+      'object': true
+    };
+
+    /** Detect free variable `exports`. */
+    var freeExports = (objectTypes[typeof exports] && exports && !exports.nodeType)
+      ? exports
+      : undefined;
+
+    /** Detect free variable `module`. */
+    var freeModule = (objectTypes[typeof module] && module && !module.nodeType)
+      ? module
+      : undefined;
+
+    /** Detect free variable `global` from Node.js. */
+    var freeGlobal = checkGlobal(freeExports && freeModule && typeof global == 'object' && global);
+
+    /** Detect free variable `self`. */
+    var freeSelf = checkGlobal(objectTypes[typeof self] && self);
+
+    /** Detect free variable `window`. */
+    var freeWindow = checkGlobal(objectTypes[typeof window] && window);
+
+    /** Detect `this` as the global object. */
+    var thisGlobal = checkGlobal(objectTypes[typeof this] && this);
+
+    /**
+     * Used as a reference to the global object.
+     *
+     * The `this` value is used if it's the global object to avoid Greasemonkey's
+     * restricted `window` object, otherwise the `window` object is used.
+     */
+    var root$2 = freeGlobal ||
+      ((freeWindow !== (thisGlobal && thisGlobal.window)) && freeWindow) ||
+        freeSelf || thisGlobal || Function('return this')();
+
+    /** Built-in value references. */
+    var Symbol = root$2.Symbol;
+
+    /** Used as references for various `Number` constants. */
+    var INFINITY = 1 / 0;
+
+    /** Used to convert symbols to primitives and strings. */
+    var symbolProto = Symbol ? Symbol.prototype : undefined;
+    var symbolToString = symbolProto ? symbolProto.toString : undefined;
+    /**
+     * The base implementation of `_.toString` which doesn't convert nullish
+     * values to empty strings.
+     *
+     * @private
+     * @param {*} value The value to process.
+     * @returns {string} Returns the string.
+     */
+    function baseToString(value) {
+      // Exit early for strings to avoid a performance hit in some environments.
+      if (typeof value == 'string') {
+        return value;
+      }
+      if (isSymbol(value)) {
+        return symbolToString ? symbolToString.call(value) : '';
+      }
+      var result = (value + '');
+      return (result == '0' && (1 / value) == -INFINITY) ? '-0' : result;
     }
 
     /**
@@ -2927,7 +3092,17 @@
           result = value;
         }
         if (other !== undefined) {
-          result = result === undefined ? other : operator(result, other);
+          if (result === undefined) {
+            return other;
+          }
+          if (typeof value == 'string' || typeof other == 'string') {
+            value = baseToString(value);
+            other = baseToString(other);
+          } else {
+            value = baseToNumber(value);
+            other = baseToNumber(other);
+          }
+          result = operator(value, other);
         }
         return result;
       };
@@ -2985,14 +3160,14 @@
     var funcTag = '[object Function]';
     var genTag = '[object GeneratorFunction]';
     /** Used for built-in method references. */
-    var objectProto = Object.prototype;
+    var objectProto$1 = Object.prototype;
 
     /**
      * Used to resolve the
      * [`toStringTag`](http://ecma-international.org/ecma-262/6.0/#sec-object.prototype.tostring)
      * of values.
      */
-    var objectToString = objectProto.toString;
+    var objectToString$1 = objectProto$1.toString;
 
     /**
      * Checks if `value` is classified as a `Function` object.
@@ -3016,76 +3191,12 @@
       // The use of `Object#toString` avoids issues with the `typeof` operator
       // in Safari 8 which returns 'object' for typed array and weak map constructors,
       // and PhantomJS 1.9 which returns 'function' for `NodeList` instances.
-      var tag = isObject(value) ? objectToString.call(value) : '';
+      var tag = isObject(value) ? objectToString$1.call(value) : '';
       return tag == funcTag || tag == genTag;
     }
 
-    /**
-     * Checks if `value` is object-like. A value is object-like if it's not `null`
-     * and has a `typeof` result of "object".
-     *
-     * @static
-     * @memberOf _
-     * @since 4.0.0
-     * @category Lang
-     * @param {*} value The value to check.
-     * @returns {boolean} Returns `true` if `value` is object-like, else `false`.
-     * @example
-     *
-     * _.isObjectLike({});
-     * // => true
-     *
-     * _.isObjectLike([1, 2, 3]);
-     * // => true
-     *
-     * _.isObjectLike(_.noop);
-     * // => false
-     *
-     * _.isObjectLike(null);
-     * // => false
-     */
-    function isObjectLike(value) {
-      return !!value && typeof value == 'object';
-    }
-
-    /** `Object#toString` result references. */
-    var symbolTag = '[object Symbol]';
-
-    /** Used for built-in method references. */
-    var objectProto$1 = Object.prototype;
-
-    /**
-     * Used to resolve the
-     * [`toStringTag`](http://ecma-international.org/ecma-262/6.0/#sec-object.prototype.tostring)
-     * of values.
-     */
-    var objectToString$1 = objectProto$1.toString;
-
-    /**
-     * Checks if `value` is classified as a `Symbol` primitive or object.
-     *
-     * @static
-     * @memberOf _
-     * @since 4.0.0
-     * @category Lang
-     * @param {*} value The value to check.
-     * @returns {boolean} Returns `true` if `value` is correctly classified,
-     *  else `false`.
-     * @example
-     *
-     * _.isSymbol(Symbol.iterator);
-     * // => true
-     *
-     * _.isSymbol('abc');
-     * // => false
-     */
-    function isSymbol(value) {
-      return typeof value == 'symbol' ||
-        (isObjectLike(value) && objectToString$1.call(value) == symbolTag);
-    }
-
     /** Used as references for various `Number` constants. */
-    var NAN = 0 / 0;
+    var NAN$1 = 0 / 0;
 
     /** Used to match leading and trailing whitespace. */
     var reTrim = /^\s+|\s+$/g;
@@ -3130,7 +3241,7 @@
         return value;
       }
       if (isSymbol(value)) {
-        return NAN;
+        return NAN$1;
       }
       if (isObject(value)) {
         var other = isFunction(value.valueOf) ? value.valueOf() : value;
@@ -3143,10 +3254,10 @@
       var isBinary = reIsBinary.test(value);
       return (isBinary || reIsOctal.test(value))
         ? freeParseInt(value.slice(2), isBinary ? 2 : 8)
-        : (reIsBadHex.test(value) ? NAN : +value);
+        : (reIsBadHex.test(value) ? NAN$1 : +value);
     }
 
-    var INFINITY = 1 / 0;
+    var INFINITY$1 = 1 / 0;
     var MAX_INTEGER = 1.7976931348623157e+308;
     /**
      * Converts `value` to an integer.
@@ -3179,7 +3290,7 @@
         return value === 0 ? value : 0;
       }
       value = toNumber(value);
-      if (value === INFINITY || value === -INFINITY) {
+      if (value === INFINITY$1 || value === -INFINITY$1) {
         var sign = (value < 0 ? -1 : 1);
         return sign * MAX_INTEGER;
       }
@@ -3349,55 +3460,6 @@
       var value = object[key];
       return isNative(value) ? value : undefined;
     }
-
-    /**
-     * Checks if `value` is a global object.
-     *
-     * @private
-     * @param {*} value The value to check.
-     * @returns {null|Object} Returns `value` if it's a global object, else `null`.
-     */
-    function checkGlobal(value) {
-      return (value && value.Object === Object) ? value : null;
-    }
-
-    /** Used to determine if values are of the language type `Object`. */
-    var objectTypes = {
-      'function': true,
-      'object': true
-    };
-
-    /** Detect free variable `exports`. */
-    var freeExports = (objectTypes[typeof exports] && exports && !exports.nodeType)
-      ? exports
-      : undefined;
-
-    /** Detect free variable `module`. */
-    var freeModule = (objectTypes[typeof module] && module && !module.nodeType)
-      ? module
-      : undefined;
-
-    /** Detect free variable `global` from Node.js. */
-    var freeGlobal = checkGlobal(freeExports && freeModule && typeof global == 'object' && global);
-
-    /** Detect free variable `self`. */
-    var freeSelf = checkGlobal(objectTypes[typeof self] && self);
-
-    /** Detect free variable `window`. */
-    var freeWindow = checkGlobal(objectTypes[typeof window] && window);
-
-    /** Detect `this` as the global object. */
-    var thisGlobal = checkGlobal(objectTypes[typeof this] && this);
-
-    /**
-     * Used as a reference to the global object.
-     *
-     * The `this` value is used if it's the global object to avoid Greasemonkey's
-     * restricted `window` object, otherwise the `window` object is used.
-     */
-    var root$2 = freeGlobal ||
-      ((freeWindow !== (thisGlobal && thisGlobal.window)) && freeWindow) ||
-        freeSelf || thisGlobal || Function('return this')();
 
     /* Built-in method references that are verified to be native. */
     var WeakMap = getNative(root$2, 'WeakMap');
@@ -4077,9 +4139,10 @@
      * @returns {boolean} Returns `true` if `value` is a valid index, else `false`.
      */
     function isIndex(value, length) {
-      value = (typeof value == 'number' || reIsUint.test(value)) ? +value : -1;
       length = length == null ? MAX_SAFE_INTEGER : length;
-      return value > -1 && value % 1 == 0 && value < length;
+      return !!length &&
+        (typeof value == 'number' || reIsUint.test(value)) &&
+        (value > -1 && value % 1 == 0 && value < length);
     }
 
     /* Built-in method references for those with the same name as other `lodash` methods. */
@@ -5077,6 +5140,7 @@
      * @param {Object} object The destination object.
      * @param {...Object} [sources] The source objects.
      * @returns {Object} Returns `object`.
+     * @see _.assignIn
      * @example
      *
      * function Foo() {
@@ -5230,6 +5294,7 @@
      * @param {Object} object The destination object.
      * @param {...Object} [sources] The source objects.
      * @returns {Object} Returns `object`.
+     * @see _.assign
      * @example
      *
      * function Foo() {
@@ -5273,6 +5338,7 @@
      * @param {...Object} sources The source objects.
      * @param {Function} [customizer] The function to customize assigned values.
      * @returns {Object} Returns `object`.
+     * @see _.assignWith
      * @example
      *
      * function customizer(objValue, srcValue) {
@@ -5304,6 +5370,7 @@
      * @param {...Object} sources The source objects.
      * @param {Function} [customizer] The function to customize assigned values.
      * @returns {Object} Returns `object`.
+     * @see _.assignInWith
      * @example
      *
      * function customizer(objValue, srcValue) {
@@ -5440,8 +5507,9 @@
      */
     function isKeyable(value) {
       var type = typeof value;
-      return type == 'number' || type == 'boolean' ||
-        (type == 'string' && value != '__proto__') || value == null;
+      return (type == 'string' || type == 'number' || type == 'symbol' || type == 'boolean')
+        ? (value !== '__proto__')
+        : (value === null);
     }
 
     /**
@@ -5694,15 +5762,6 @@
     // Assign cache to `_.memoize`.
     memoize.Cache = MapCache;
 
-    /** Built-in value references. */
-    var Symbol = root$2.Symbol;
-
-    /** Used as references for various `Number` constants. */
-    var INFINITY$1 = 1 / 0;
-
-    /** Used to convert symbols to primitives and strings. */
-    var symbolProto = Symbol ? Symbol.prototype : undefined;
-    var symbolToString = symbolProto ? symbolProto.toString : undefined;
     /**
      * Converts `value` to a string. An empty string is returned for `null`
      * and `undefined` values. The sign of `-0` is preserved.
@@ -5725,18 +5784,7 @@
      * // => '1,2,3'
      */
     function toString(value) {
-      // Exit early for strings to avoid a performance hit in some environments.
-      if (typeof value == 'string') {
-        return value;
-      }
-      if (value == null) {
-        return '';
-      }
-      if (isSymbol(value)) {
-        return symbolToString ? symbolToString.call(value) : '';
-      }
-      var result = (value + '');
-      return (result == '0' && (1 / value) == -INFINITY$1) ? '-0' : result;
+      return value == null ? '' : baseToString(value);
     }
 
     /** Used to match property names within property paths. */
@@ -5782,13 +5830,34 @@
      * @returns {boolean} Returns `true` if `value` is a property name, else `false`.
      */
     function isKey(value, object) {
+      if (isArray(value)) {
+        return false;
+      }
       var type = typeof value;
-      if (type == 'number' || type == 'symbol') {
+      if (type == 'number' || type == 'symbol' || type == 'boolean' ||
+          value == null || isSymbol(value)) {
         return true;
       }
-      return !isArray(value) &&
-        (isSymbol(value) || reIsPlainProp.test(value) || !reIsDeepProp.test(value) ||
-          (object != null && value in Object(object)));
+      return reIsPlainProp.test(value) || !reIsDeepProp.test(value) ||
+        (object != null && value in Object(object));
+    }
+
+    /** Used as references for various `Number` constants. */
+    var INFINITY$2 = 1 / 0;
+
+    /**
+     * Converts `value` to a string key if it's not a string or symbol.
+     *
+     * @private
+     * @param {*} value The value to inspect.
+     * @returns {string|symbol} Returns the key.
+     */
+    function toKey(value) {
+      if (typeof value == 'string' || isSymbol(value)) {
+        return value;
+      }
+      var result = (value + '');
+      return (result == '0' && (1 / value) == -INFINITY$2) ? '-0' : result;
     }
 
     /**
@@ -5806,7 +5875,7 @@
           length = path.length;
 
       while (object != null && index < length) {
-        object = object[path[index++]];
+        object = object[toKey(path[index++])];
       }
       return (index && index == length) ? object : undefined;
     }
@@ -6154,6 +6223,7 @@
      */
     var bindAll = rest(function(object, methodNames) {
       arrayEach(baseFlatten(methodNames, 1), function(key) {
+        key = toKey(key);
         object[key] = bind(object[key], object);
       });
       return object;
@@ -6477,11 +6547,11 @@
     var rsLowerRange = 'a-z\\xdf-\\xf6\\xf8-\\xff';
     var rsMathOpRange = '\\xac\\xb1\\xd7\\xf7';
     var rsNonCharRange = '\\x00-\\x2f\\x3a-\\x40\\x5b-\\x60\\x7b-\\xbf';
-    var rsQuoteRange = '\\u2018\\u2019\\u201c\\u201d';
+    var rsPunctuationRange = '\\u2000-\\u206f';
     var rsSpaceRange = ' \\t\\x0b\\f\\xa0\\ufeff\\n\\r\\u2028\\u2029\\u1680\\u180e\\u2000\\u2001\\u2002\\u2003\\u2004\\u2005\\u2006\\u2007\\u2008\\u2009\\u200a\\u202f\\u205f\\u3000';
     var rsUpperRange = 'A-Z\\xc0-\\xd6\\xd8-\\xde';
     var rsVarRange$2 = '\\ufe0e\\ufe0f';
-    var rsBreakRange = rsMathOpRange + rsNonCharRange + rsQuoteRange + rsSpaceRange;
+    var rsBreakRange = rsMathOpRange + rsNonCharRange + rsPunctuationRange + rsSpaceRange;
     var rsApos$1 = "['\u2019]";
     var rsBreak = '[' + rsBreakRange + ']';
     var rsCombo$2 = '[' + rsComboMarksRange$3 + rsComboSymbolsRange$3 + ']';
@@ -7564,6 +7634,7 @@
      * @category Lang
      * @param {*} value The value to clone.
      * @returns {*} Returns the cloned value.
+     * @see _.cloneDeep
      * @example
      *
      * var objects = [{ 'a': 1 }, { 'b': 2 }];
@@ -7585,6 +7656,7 @@
      * @category Lang
      * @param {*} value The value to recursively clone.
      * @returns {*} Returns the deep cloned value.
+     * @see _.clone
      * @example
      *
      * var objects = [{ 'a': 1 }, { 'b': 2 }];
@@ -7607,6 +7679,7 @@
      * @param {*} value The value to recursively clone.
      * @param {Function} [customizer] The function to customize cloning.
      * @returns {*} Returns the deep cloned value.
+     * @see _.cloneWith
      * @example
      *
      * function customizer(value) {
@@ -7641,6 +7714,7 @@
      * @param {*} value The value to clone.
      * @param {Function} [customizer] The function to customize cloning.
      * @returns {*} Returns the cloned value.
+     * @see _.cloneDeepWith
      * @example
      *
      * function customizer(value) {
@@ -8436,7 +8510,7 @@
           length = path.length;
 
       while (++index < length) {
-        var key = path[index];
+        var key = toKey(path[index]);
         if (!(result = object != null && hasFunc(object, key))) {
           break;
         }
@@ -8492,7 +8566,7 @@
      */
     function baseMatchesProperty(path, srcValue) {
       if (isKey(path) && isStrictComparable(srcValue)) {
-        return matchesStrictComparable(path, srcValue);
+        return matchesStrictComparable(toKey(path), srcValue);
       }
       return function(object) {
         var objValue = get$2(object, path);
@@ -8538,7 +8612,7 @@
      * // => [1, 2]
      */
     function property(path) {
-      return isKey(path) ? baseProperty(path) : basePropertyDeep(path);
+      return isKey(path) ? baseProperty(toKey(path)) : basePropertyDeep(path);
     }
 
     /**
@@ -9213,6 +9287,7 @@
      * @param {Object} object The destination object.
      * @param {...Object} [sources] The source objects.
      * @returns {Object} Returns `object`.
+     * @see _.defaultsDeep
      * @example
      *
      * _.defaults({ 'user': 'barney' }, { 'age': 36 }, { 'user': 'fred' });
@@ -9517,6 +9592,7 @@
      * @param {Object} object The destination object.
      * @param {...Object} [sources] The source objects.
      * @returns {Object} Returns `object`.
+     * @see _.defaults
      * @example
      *
      * _.defaultsDeep({ 'user': { 'name': 'barney' } }, { 'user': { 'name': 'fred', 'age': 36 } });
@@ -9795,6 +9871,7 @@
         var value = array[index],
             computed = iteratee ? iteratee(value) : value;
 
+        value = (comparator || value !== 0) ? value : 0;
         if (isCommon && computed === computed) {
           var valuesIndex = valuesLength;
           while (valuesIndex--) {
@@ -9824,6 +9901,7 @@
      * @param {Array} array The array to inspect.
      * @param {...Array} [values] The values to exclude.
      * @returns {Array} Returns the new array of filtered values.
+     * @see _.without, _.xor
      * @example
      *
      * _.difference([3, 2, 1], [4, 2]);
@@ -10131,6 +10209,7 @@
      * @param {Array|Object} collection The collection to iterate over.
      * @param {Function} [iteratee=_.identity] The function invoked per iteration.
      * @returns {Array|Object} Returns `collection`.
+     * @see _.forEachRight
      * @example
      *
      * _([1, 2]).forEach(function(value) {
@@ -10215,6 +10294,7 @@
      * @param {Array|Object} collection The collection to iterate over.
      * @param {Function} [iteratee=_.identity] The function invoked per iteration.
      * @returns {Array|Object} Returns `collection`.
+     * @see _.forEach
      * @example
      *
      * _.forEachRight([1, 2], function(value) {
@@ -10253,7 +10333,7 @@
      */
     function endsWith(string, target, position) {
       string = toString(string);
-      target = typeof target == 'string' ? target : (target + '');
+      target = baseToString(target);
 
       var length = string.length;
       position = position === undefined
@@ -10622,6 +10702,7 @@
      * @param {Array|Function|Object|string} [predicate=_.identity]
      *  The function invoked per iteration.
      * @returns {Array} Returns the new filtered array.
+     * @see _.reject
      * @example
      *
      * var users = [
@@ -11023,7 +11104,7 @@
     }
 
     /** Used as references for various `Number` constants. */
-    var INFINITY$2 = 1 / 0;
+    var INFINITY$3 = 1 / 0;
 
     /**
      * This method is like `_.flatMap` except that it recursively flattens the
@@ -11047,7 +11128,7 @@
      * // => [1, 1, 2, 2]
      */
     function flatMapDeep(collection, iteratee) {
-      return baseFlatten(map(collection, iteratee), INFINITY$2);
+      return baseFlatten(map(collection, iteratee), INFINITY$3);
     }
 
     /**
@@ -11097,7 +11178,7 @@
     }
 
     /** Used as references for various `Number` constants. */
-    var INFINITY$3 = 1 / 0;
+    var INFINITY$4 = 1 / 0;
 
     /**
      * Recursively flattens `array`.
@@ -11115,7 +11196,7 @@
      */
     function flattenDeep(array) {
       var length = array ? array.length : 0;
-      return length ? baseFlatten(array, INFINITY$3) : [];
+      return length ? baseFlatten(array, INFINITY$4) : [];
     }
 
     /**
@@ -11281,6 +11362,7 @@
      * @category Util
      * @param {...(Function|Function[])} [funcs] Functions to invoke.
      * @returns {Function} Returns the new function.
+     * @see _.flowRight
      * @example
      *
      * function square(n) {
@@ -11298,11 +11380,12 @@
      * invokes the given functions from right to left.
      *
      * @static
-     * @since 0.1.0
+     * @since 3.0.0
      * @memberOf _
      * @category Util
      * @param {...(Function|Function[])} [funcs] Functions to invoke.
      * @returns {Function} Returns the new function.
+     * @see _.flow
      * @example
      *
      * function square(n) {
@@ -11328,6 +11411,7 @@
      * @param {Object} object The object to iterate over.
      * @param {Function} [iteratee=_.identity] The function invoked per iteration.
      * @returns {Object} Returns `object`.
+     * @see _.forInRight
      * @example
      *
      * function Foo() {
@@ -11359,6 +11443,7 @@
      * @param {Object} object The object to iterate over.
      * @param {Function} [iteratee=_.identity] The function invoked per iteration.
      * @returns {Object} Returns `object`.
+     * @see _.forIn
      * @example
      *
      * function Foo() {
@@ -11392,6 +11477,7 @@
      * @param {Object} object The object to iterate over.
      * @param {Function} [iteratee=_.identity] The function invoked per iteration.
      * @returns {Object} Returns `object`.
+     * @see _.forOwnRight
      * @example
      *
      * function Foo() {
@@ -11421,6 +11507,7 @@
      * @param {Object} object The object to iterate over.
      * @param {Function} [iteratee=_.identity] The function invoked per iteration.
      * @returns {Object} Returns `object`.
+     * @see _.forOwn
      * @example
      *
      * function Foo() {
@@ -11491,6 +11578,7 @@
      * @category Object
      * @param {Object} object The object to inspect.
      * @returns {Array} Returns the new array of property names.
+     * @see _.functionsIn
      * @example
      *
      * function Foo() {
@@ -11517,6 +11605,7 @@
      * @category Object
      * @param {Object} object The object to inspect.
      * @returns {Array} Returns the new array of property names.
+     * @see _.functions
      * @example
      *
      * function Foo() {
@@ -11572,6 +11661,36 @@
     });
 
     /**
+     * The base implementation of `_.gt` which doesn't coerce arguments to numbers.
+     *
+     * @private
+     * @param {*} value The value to compare.
+     * @param {*} other The other value to compare.
+     * @returns {boolean} Returns `true` if `value` is greater than `other`,
+     *  else `false`.
+     */
+    function baseGt(value, other) {
+      return value > other;
+    }
+
+    /**
+     * Creates a function that performs a relational operation on two values.
+     *
+     * @private
+     * @param {Function} operator The function to perform the operation.
+     * @returns {Function} Returns the new relational operation function.
+     */
+    function createRelationalOperation(operator) {
+      return function(value, other) {
+        if (!(typeof value == 'string' && typeof other == 'string')) {
+          value = toNumber(value);
+          other = toNumber(other);
+        }
+        return operator(value, other);
+      };
+    }
+
+    /**
      * Checks if `value` is greater than `other`.
      *
      * @static
@@ -11582,6 +11701,7 @@
      * @param {*} other The other value to compare.
      * @returns {boolean} Returns `true` if `value` is greater than `other`,
      *  else `false`.
+     * @see _.lt
      * @example
      *
      * _.gt(3, 1);
@@ -11593,9 +11713,7 @@
      * _.gt(1, 3);
      * // => false
      */
-    function gt(value, other) {
-      return value > other;
-    }
+    var gt = createRelationalOperation(baseGt);
 
     /**
      * Checks if `value` is greater than or equal to `other`.
@@ -11608,6 +11726,7 @@
      * @param {*} other The other value to compare.
      * @returns {boolean} Returns `true` if `value` is greater than or equal to
      *  `other`, else `false`.
+     * @see _.lte
      * @example
      *
      * _.gte(3, 1);
@@ -11619,9 +11738,9 @@
      * _.gte(1, 3);
      * // => false
      */
-    function gte(value, other) {
+    var gte = createRelationalOperation(function(value, other) {
       return value >= other;
-    }
+    });
 
     /**
      * Checks if `path` is a direct property of `object`.
@@ -11693,7 +11812,7 @@
     }
 
     /**
-     * Checks if `n` is between `start` and up to but not including, `end`. If
+     * Checks if `n` is between `start` and up to, but not including, `end`. If
      * `end` is not specified, it's set to `start` with `start` then set to `0`.
      * If `start` is greater than `end` the params are swapped to support
      * negative ranges.
@@ -11706,6 +11825,7 @@
      * @param {number} [start=0] The start of the range.
      * @param {number} end The end of the range.
      * @returns {boolean} Returns `true` if `number` is in the range, else `false`.
+     * @see _.range, _.rangeRight
      * @example
      *
      * _.inRange(3, 2, 4);
@@ -11931,6 +12051,7 @@
         var value = array[index],
             computed = iteratee ? iteratee(value) : value;
 
+        value = (comparator || value !== 0) ? value : 0;
         if (!(seen
               ? cacheHas(seen, computed)
               : includes(result, computed, comparator)
@@ -12184,7 +12305,7 @@
         object = parent(object, path);
         path = last(path);
       }
-      var func = object == null ? object : object[path];
+      var func = object == null ? object : object[toKey(path)];
       return func == null ? undefined : apply(func, object, args);
     }
 
@@ -13186,6 +13307,19 @@
     var lowerFirst = createCaseFirst('toLowerCase');
 
     /**
+     * The base implementation of `_.lt` which doesn't coerce arguments to numbers.
+     *
+     * @private
+     * @param {*} value The value to compare.
+     * @param {*} other The other value to compare.
+     * @returns {boolean} Returns `true` if `value` is less than `other`,
+     *  else `false`.
+     */
+    function baseLt(value, other) {
+      return value < other;
+    }
+
+    /**
      * Checks if `value` is less than `other`.
      *
      * @static
@@ -13196,6 +13330,7 @@
      * @param {*} other The other value to compare.
      * @returns {boolean} Returns `true` if `value` is less than `other`,
      *  else `false`.
+     * @see _.gt
      * @example
      *
      * _.lt(1, 3);
@@ -13207,9 +13342,7 @@
      * _.lt(3, 1);
      * // => false
      */
-    function lt(value, other) {
-      return value < other;
-    }
+    var lt = createRelationalOperation(baseLt);
 
     /**
      * Checks if `value` is less than or equal to `other`.
@@ -13222,6 +13355,7 @@
      * @param {*} other The other value to compare.
      * @returns {boolean} Returns `true` if `value` is less than or equal to
      *  `other`, else `false`.
+     * @see _.gte
      * @example
      *
      * _.lte(1, 3);
@@ -13233,9 +13367,9 @@
      * _.lte(3, 1);
      * // => false
      */
-    function lte(value, other) {
+    var lte = createRelationalOperation(function(value, other) {
       return value <= other;
-    }
+    });
 
     /**
      * The opposite of `_.mapValues`; this method creates an object with the
@@ -13251,6 +13385,7 @@
      * @param {Array|Function|Object|string} [iteratee=_.identity]
      *  The function invoked per iteration.
      * @returns {Object} Returns the new mapped object.
+     * @see _.mapValues
      * @example
      *
      * _.mapKeys({ 'a': 1, 'b': 2 }, function(value, key) {
@@ -13282,6 +13417,7 @@
      * @param {Array|Function|Object|string} [iteratee=_.identity]
      *  The function invoked per iteration.
      * @returns {Object} Returns the new mapped object.
+     * @see _.mapKeys
      * @example
      *
      * var users = {
@@ -13381,7 +13517,7 @@
             current = iteratee(value);
 
         if (current != null && (computed === undefined
-              ? current === current
+              ? (current === current && !isSymbol(current))
               : comparator(current, computed)
             )) {
           var computed = current,
@@ -13411,7 +13547,7 @@
      */
     function max(array) {
       return (array && array.length)
-        ? baseExtremum(array, identity$1, gt)
+        ? baseExtremum(array, identity$1, baseGt)
         : undefined;
     }
 
@@ -13441,7 +13577,7 @@
      */
     function maxBy(array, iteratee) {
       return (array && array.length)
-        ? baseExtremum(array, baseIteratee(iteratee), gt)
+        ? baseExtremum(array, baseIteratee(iteratee), baseGt)
         : undefined;
     }
 
@@ -13469,7 +13605,7 @@
     }
 
     /** Used as references for various `Number` constants. */
-    var NAN$1 = 0 / 0;
+    var NAN$2 = 0 / 0;
 
     /**
      * The base implementation of `_.mean` and `_.meanBy` without support for
@@ -13482,7 +13618,7 @@
      */
     function baseMean(array, iteratee) {
       var length = array ? array.length : 0;
-      return length ? (baseSum(array, iteratee) / length) : NAN$1;
+      return length ? (baseSum(array, iteratee) / length) : NAN$2;
     }
 
     /**
@@ -13645,7 +13781,7 @@
      */
     function min(array) {
       return (array && array.length)
-        ? baseExtremum(array, identity$1, lt)
+        ? baseExtremum(array, identity$1, baseLt)
         : undefined;
     }
 
@@ -13675,7 +13811,7 @@
      */
     function minBy(array, iteratee) {
       return (array && array.length)
-        ? baseExtremum(array, baseIteratee(iteratee), lt)
+        ? baseExtremum(array, baseIteratee(iteratee), baseLt)
         : undefined;
     }
 
@@ -13992,17 +14128,6 @@
     }
 
     /**
-     * Converts `value` to a string key if it's not a string or symbol.
-     *
-     * @private
-     * @param {*} value The value to inspect.
-     * @returns {string|symbol} Returns the key.
-     */
-    function toKey(key) {
-      return (typeof key == 'string' || isSymbol(key)) ? key : (key + '');
-    }
-
-    /**
      * The opposite of `_.pick`; this method creates an object composed of the
      * own and inherited enumerable string keyed properties of `object` that are
      * not omitted.
@@ -14134,22 +14259,28 @@
      */
     function compareAscending(value, other) {
       if (value !== other) {
-        var valIsNull = value === null,
-            valIsUndef = value === undefined,
-            valIsReflexive = value === value;
+        var valIsDefined = value !== undefined,
+            valIsNull = value === null,
+            valIsReflexive = value === value,
+            valIsSymbol = isSymbol(value);
 
-        var othIsNull = other === null,
-            othIsUndef = other === undefined,
-            othIsReflexive = other === other;
+        var othIsDefined = other !== undefined,
+            othIsNull = other === null,
+            othIsReflexive = other === other,
+            othIsSymbol = isSymbol(other);
 
-        if ((value > other && !othIsNull) || !valIsReflexive ||
-            (valIsNull && !othIsUndef && othIsReflexive) ||
-            (valIsUndef && othIsReflexive)) {
+        if ((!othIsNull && !othIsSymbol && !valIsSymbol && value > other) ||
+            (valIsSymbol && othIsDefined && othIsReflexive && !othIsNull && !othIsSymbol) ||
+            (valIsNull && othIsDefined && othIsReflexive) ||
+            (!valIsDefined && othIsReflexive) ||
+            !valIsReflexive) {
           return 1;
         }
-        if ((value < other && !valIsNull) || !othIsReflexive ||
-            (othIsNull && !valIsUndef && valIsReflexive) ||
-            (othIsUndef && valIsReflexive)) {
+        if ((!valIsNull && !valIsSymbol && !othIsSymbol && value < other) ||
+            (othIsSymbol && valIsDefined && valIsReflexive && !valIsNull && !valIsSymbol) ||
+            (othIsNull && valIsDefined && valIsReflexive) ||
+            (!othIsDefined && valIsReflexive) ||
+            !othIsReflexive) {
           return -1;
         }
       }
@@ -14508,7 +14639,7 @@
      * @returns {string} Returns the padding for `string`.
      */
     function createPadding(length, chars) {
-      chars = chars === undefined ? ' ' : (chars + '');
+      chars = chars === undefined ? ' ' : baseToString(chars);
 
       var charsLength = chars.length;
       if (charsLength < 2) {
@@ -14818,7 +14949,7 @@
      * // => { 'a': 1, 'c': 3 }
      */
     var pick = rest(function(object, props) {
-      return object == null ? {} : basePick(object, baseFlatten(props, 1));
+      return object == null ? {} : basePick(object, arrayMap(baseFlatten(props, 1), toKey));
     });
 
     /**
@@ -15109,7 +15240,7 @@
 
       while (length--) {
         var index = indexes[length];
-        if (lastIndex == length || index != previous) {
+        if (length == lastIndex || index !== previous) {
           var previous = index;
           if (isIndex(index)) {
             splice$2.call(array, index, 1);
@@ -15119,11 +15250,11 @@
                 object = parent(array, path);
 
             if (object != null) {
-              delete object[last(path)];
+              delete object[toKey(last(path))];
             }
           }
           else {
-            delete array[index];
+            delete array[toKey(index)];
           }
         }
       }
@@ -15155,10 +15286,15 @@
      * // => [10, 20]
      */
     var pullAt = rest(function(array, indexes) {
-      indexes = arrayMap(baseFlatten(indexes, 1), String);
+      indexes = baseFlatten(indexes, 1);
 
-      var result = baseAt(array, indexes);
-      basePullAt(array, indexes.sort(compareAscending));
+      var length = array ? array.length : 0,
+          result = baseAt(array, indexes);
+
+      basePullAt(array, arrayMap(indexes, function(index) {
+        return isIndex(index, length) ? +index : index;
+      }).sort(compareAscending));
+
       return result;
     });
 
@@ -15323,6 +15459,7 @@
      * @param {number} end The end of the range.
      * @param {number} [step=1] The value to increment or decrement by.
      * @returns {Array} Returns the new array of numbers.
+     * @see _.inRange, _.rangeRight
      * @example
      *
      * _.range(4);
@@ -15360,6 +15497,7 @@
      * @param {number} end The end of the range.
      * @param {number} [step=1] The value to increment or decrement by.
      * @returns {Array} Returns the new array of numbers.
+     * @see _.inRange, _.range
      * @example
      *
      * _.rangeRight(4);
@@ -15459,6 +15597,7 @@
      * @param {Function} [iteratee=_.identity] The function invoked per iteration.
      * @param {*} [accumulator] The initial value.
      * @returns {*} Returns the accumulated value.
+     * @see _.reduceRight
      * @example
      *
      * _.reduce([1, 2], function(sum, n) {
@@ -15514,6 +15653,7 @@
      * @param {Function} [iteratee=_.identity] The function invoked per iteration.
      * @param {*} [accumulator] The initial value.
      * @returns {*} Returns the accumulated value.
+     * @see _.reduce
      * @example
      *
      * var array = [[0, 1], [2, 3], [4, 5]];
@@ -15542,6 +15682,7 @@
      * @param {Array|Function|Object|string} [predicate=_.identity]
      *  The function invoked per iteration.
      * @returns {Array} Returns the new filtered array.
+     * @see _.filter
      * @example
      *
      * var users = [
@@ -15726,7 +15867,7 @@
         length = 1;
       }
       while (++index < length) {
-        var value = object == null ? undefined : object[path[index]];
+        var value = object == null ? undefined : object[toKey(path[index])];
         if (value === undefined) {
           index = length;
           value = defaultValue;
@@ -15874,7 +16015,7 @@
           nested = object;
 
       while (nested != null && ++index < length) {
-        var key = path[index];
+        var key = toKey(path[index]);
         if (isObject(nested)) {
           var newValue = value;
           if (index != lastIndex) {
@@ -16188,7 +16329,6 @@
       return baseOrderBy(collection, iteratees, []);
     });
 
-    /** Used as references for the maximum length and index of an array. */
     var MAX_ARRAY_LENGTH$4 = 4294967295;
     var MAX_ARRAY_INDEX = MAX_ARRAY_LENGTH$4 - 1;
     var nativeFloor$3 = Math.floor;
@@ -16213,21 +16353,26 @@
           high = array ? array.length : 0,
           valIsNaN = value !== value,
           valIsNull = value === null,
-          valIsUndef = value === undefined;
+          valIsSymbol = isSymbol(value),
+          valIsUndefined = value === undefined;
 
       while (low < high) {
         var mid = nativeFloor$3((low + high) / 2),
             computed = iteratee(array[mid]),
-            isDef = computed !== undefined,
-            isReflexive = computed === computed;
+            othIsDefined = computed !== undefined,
+            othIsNull = computed === null,
+            othIsReflexive = computed === computed,
+            othIsSymbol = isSymbol(computed);
 
         if (valIsNaN) {
-          var setLow = isReflexive || retHighest;
+          var setLow = retHighest || othIsReflexive;
+        } else if (valIsUndefined) {
+          setLow = othIsReflexive && (retHighest || othIsDefined);
         } else if (valIsNull) {
-          setLow = isReflexive && isDef && (retHighest || computed != null);
-        } else if (valIsUndef) {
-          setLow = isReflexive && (retHighest || isDef);
-        } else if (computed == null) {
+          setLow = othIsReflexive && othIsDefined && (retHighest || !othIsNull);
+        } else if (valIsSymbol) {
+          setLow = othIsReflexive && othIsDefined && !othIsNull && (retHighest || !othIsSymbol);
+        } else if (othIsNull || othIsSymbol) {
           setLow = false;
         } else {
           setLow = retHighest ? (computed <= value) : (computed < value);
@@ -16264,7 +16409,8 @@
           var mid = (low + high) >>> 1,
               computed = array[mid];
 
-          if ((retHighest ? (computed <= value) : (computed < value)) && computed !== null) {
+          if (computed !== null && !isSymbol(computed) &&
+              (retHighest ? (computed <= value) : (computed < value))) {
             low = mid + 1;
           } else {
             high = mid;
@@ -16431,44 +16577,30 @@
     }
 
     /**
-     * The base implementation of `_.sortedUniqBy` without support for iteratee
-     * shorthands.
+     * The base implementation of `_.sortedUniq` and `_.sortedUniqBy` without
+     * support for iteratee shorthands.
      *
      * @private
      * @param {Array} array The array to inspect.
      * @param {Function} [iteratee] The iteratee invoked per element.
      * @returns {Array} Returns the new duplicate free array.
      */
-    function baseSortedUniqBy(array, iteratee) {
-      var index = 0,
+    function baseSortedUniq(array, iteratee) {
+      var index = -1,
           length = array.length,
-          value = array[0],
-          computed = iteratee ? iteratee(value) : value,
-          seen = computed,
-          resIndex = 1,
-          result = [value];
+          resIndex = 0,
+          result = [];
 
       while (++index < length) {
-        value = array[index],
-        computed = iteratee ? iteratee(value) : value;
+        var value = array[index],
+            computed = iteratee ? iteratee(value) : value;
 
-        if (!eq(computed, seen)) {
-          seen = computed;
-          result[resIndex++] = value;
+        if (!index || !eq(computed, seen)) {
+          var seen = computed;
+          result[resIndex++] = value === 0 ? 0 : value;
         }
       }
       return result;
-    }
-
-    /**
-     * The base implementation of `_.sortedUniq`.
-     *
-     * @private
-     * @param {Array} array The array to inspect.
-     * @returns {Array} Returns the new duplicate free array.
-     */
-    function baseSortedUniq(array) {
-      return baseSortedUniqBy(array);
     }
 
     /**
@@ -16510,7 +16642,7 @@
      */
     function sortedUniqBy(array, iteratee) {
       return (array && array.length)
-        ? baseSortedUniqBy(array, baseIteratee(iteratee))
+        ? baseSortedUniq(array, baseIteratee(iteratee))
         : [];
     }
 
@@ -16555,7 +16687,7 @@
             typeof separator == 'string' ||
             (separator != null && !isRegExp(separator))
           )) {
-        separator += '';
+        separator = baseToString(separator);
         if (separator == '' && reHasComplexSymbol.test(string)) {
           return castSlice(stringToArray(string), 0, limit);
         }
@@ -16670,7 +16802,7 @@
     function startsWith(string, target, position) {
       string = toString(string);
       position = baseClamp(toInteger(position), 0, string.length);
-      return string.lastIndexOf(target, position) == position;
+      return string.lastIndexOf(baseToString(target), position) == position;
     }
 
     /**
@@ -17673,13 +17805,10 @@
      */
     function trim(string, chars, guard) {
       string = toString(string);
-      if (!string) {
-        return string;
-      }
-      if (guard || chars === undefined) {
+      if (string && (guard || chars === undefined)) {
         return string.replace(reTrim$2, '');
       }
-      if (!(chars += '')) {
+      if (!string || !(chars = baseToString(chars))) {
         return string;
       }
       var strSymbols = stringToArray(string),
@@ -17714,13 +17843,10 @@
      */
     function trimEnd(string, chars, guard) {
       string = toString(string);
-      if (!string) {
-        return string;
-      }
-      if (guard || chars === undefined) {
+      if (string && (guard || chars === undefined)) {
         return string.replace(reTrimEnd, '');
       }
-      if (!(chars += '')) {
+      if (!string || !(chars = baseToString(chars))) {
         return string;
       }
       var strSymbols = stringToArray(string),
@@ -17753,13 +17879,10 @@
      */
     function trimStart(string, chars, guard) {
       string = toString(string);
-      if (!string) {
-        return string;
-      }
-      if (guard || chars === undefined) {
+      if (string && (guard || chars === undefined)) {
         return string.replace(reTrimStart, '');
       }
-      if (!(chars += '')) {
+      if (!string || !(chars = baseToString(chars))) {
         return string;
       }
       var strSymbols = stringToArray(string),
@@ -17817,7 +17940,7 @@
       if (isObject(options)) {
         var separator = 'separator' in options ? options.separator : separator;
         length = 'length' in options ? toInteger(options.length) : length;
-        omission = 'omission' in options ? toString(options.omission) : omission;
+        omission = 'omission' in options ? baseToString(options.omission) : omission;
       }
       string = toString(string);
 
@@ -17857,7 +17980,7 @@
           }
           result = result.slice(0, newEnd === undefined ? end : newEnd);
         }
-      } else if (string.indexOf(separator, end) != end) {
+      } else if (string.indexOf(baseToString(separator), end) != end) {
         var index = result.lastIndexOf(separator);
         if (index > -1) {
           result = result.slice(0, index);
@@ -17934,6 +18057,9 @@
         : string;
     }
 
+    /** Used as references for various `Number` constants. */
+    var INFINITY$5 = 1 / 0;
+
     /**
      * Creates a set of `values`.
      *
@@ -17941,7 +18067,7 @@
      * @param {Array} values The values to add to the set.
      * @returns {Object} Returns the new set.
      */
-    var createSet = !(Set && new Set([1, 2]).size === 2) ? noop$1 : function(values) {
+    var createSet = !(Set && (1 / setToArray(new Set([,-0]))[1]) == INFINITY$5) ? noop$1 : function(values) {
       return new Set(values);
     };
 
@@ -17986,6 +18112,7 @@
         var value = array[index],
             computed = iteratee ? iteratee(value) : value;
 
+        value = (comparator || value !== 0) ? value : 0;
         if (isCommon && computed === computed) {
           var seenIndex = seen.length;
           while (seenIndex--) {
@@ -18199,8 +18326,9 @@
     function baseUnset(object, path) {
       path = isKey(path, object) ? [path] : castPath(path);
       object = parent(object, path);
-      var key = last(path);
-      return (object != null && has(object, key)) ? delete object[key] : true;
+
+      var key = toKey(last(path));
+      return !(object != null && baseHas(object, key)) || delete object[key];
     }
 
     /**
@@ -18455,6 +18583,7 @@
      * @param {Array} array The array to filter.
      * @param {...*} [values] The values to exclude.
      * @returns {Array} Returns the new array of filtered values.
+     * @see _.difference, _.xor
      * @example
      *
      * _.without([1, 2, 1, 3], 1, 2);
@@ -18643,6 +18772,7 @@
      * @category Array
      * @param {...Array} [arrays] The arrays to inspect.
      * @returns {Array} Returns the new array of values.
+     * @see _.difference, _.without
      * @example
      *
      * _.xor([2, 1], [4, 2]);
@@ -18817,7 +18947,7 @@
       return unzipWith(arrays, iteratee);
     });
 
-    var array$1 = {
+    var array = {
       chunk, compact, concat, difference, differenceBy,
       differenceWith, drop, dropRight, dropRightWhile, dropWhile,
       fill, findIndex, findLastIndex, flatten, flattenDeep,
@@ -19054,7 +19184,7 @@
     }
 
     /** Used as the semantic version number. */
-    var VERSION = '4.11.1';
+    var VERSION = '4.11.2';
 
     /** Used to compose bitmasks for wrapper metadata. */
     var BIND_KEY_FLAG$5 = 2;
@@ -19109,9 +19239,9 @@
     lodash.bindKey = func.bindKey;
     lodash.castArray = lang.castArray;
     lodash.chain = seq.chain;
-    lodash.chunk = array$1.chunk;
-    lodash.compact = array$1.compact;
-    lodash.concat = array$1.concat;
+    lodash.chunk = array.chunk;
+    lodash.compact = array.compact;
+    lodash.concat = array.concat;
     lodash.cond = util.cond;
     lodash.conforms = util.conforms;
     lodash.constant = util.constant;
@@ -19124,32 +19254,32 @@
     lodash.defaultsDeep = object$1.defaultsDeep;
     lodash.defer = func.defer;
     lodash.delay = func.delay;
-    lodash.difference = array$1.difference;
-    lodash.differenceBy = array$1.differenceBy;
-    lodash.differenceWith = array$1.differenceWith;
-    lodash.drop = array$1.drop;
-    lodash.dropRight = array$1.dropRight;
-    lodash.dropRightWhile = array$1.dropRightWhile;
-    lodash.dropWhile = array$1.dropWhile;
-    lodash.fill = array$1.fill;
+    lodash.difference = array.difference;
+    lodash.differenceBy = array.differenceBy;
+    lodash.differenceWith = array.differenceWith;
+    lodash.drop = array.drop;
+    lodash.dropRight = array.dropRight;
+    lodash.dropRightWhile = array.dropRightWhile;
+    lodash.dropWhile = array.dropWhile;
+    lodash.fill = array.fill;
     lodash.filter = collection.filter;
     lodash.flatMap = collection.flatMap;
     lodash.flatMapDeep = collection.flatMapDeep;
     lodash.flatMapDepth = collection.flatMapDepth;
-    lodash.flatten = array$1.flatten;
-    lodash.flattenDeep = array$1.flattenDeep;
-    lodash.flattenDepth = array$1.flattenDepth;
+    lodash.flatten = array.flatten;
+    lodash.flattenDeep = array.flattenDeep;
+    lodash.flattenDepth = array.flattenDepth;
     lodash.flip = func.flip;
     lodash.flow = util.flow;
     lodash.flowRight = util.flowRight;
-    lodash.fromPairs = array$1.fromPairs;
+    lodash.fromPairs = array.fromPairs;
     lodash.functions = object$1.functions;
     lodash.functionsIn = object$1.functionsIn;
     lodash.groupBy = collection.groupBy;
-    lodash.initial = array$1.initial;
-    lodash.intersection = array$1.intersection;
-    lodash.intersectionBy = array$1.intersectionBy;
-    lodash.intersectionWith = array$1.intersectionWith;
+    lodash.initial = array.initial;
+    lodash.intersection = array.intersection;
+    lodash.intersectionBy = array.intersectionBy;
+    lodash.intersectionWith = array.intersectionWith;
     lodash.invert = object$1.invert;
     lodash.invertBy = object$1.invertBy;
     lodash.invokeMap = collection.invokeMap;
@@ -19185,33 +19315,33 @@
     lodash.pickBy = object$1.pickBy;
     lodash.property = util.property;
     lodash.propertyOf = util.propertyOf;
-    lodash.pull = array$1.pull;
-    lodash.pullAll = array$1.pullAll;
-    lodash.pullAllBy = array$1.pullAllBy;
-    lodash.pullAllWith = array$1.pullAllWith;
-    lodash.pullAt = array$1.pullAt;
+    lodash.pull = array.pull;
+    lodash.pullAll = array.pullAll;
+    lodash.pullAllBy = array.pullAllBy;
+    lodash.pullAllWith = array.pullAllWith;
+    lodash.pullAt = array.pullAt;
     lodash.range = util.range;
     lodash.rangeRight = util.rangeRight;
     lodash.rearg = func.rearg;
     lodash.reject = collection.reject;
-    lodash.remove = array$1.remove;
+    lodash.remove = array.remove;
     lodash.rest = rest;
-    lodash.reverse = array$1.reverse;
+    lodash.reverse = array.reverse;
     lodash.sampleSize = collection.sampleSize;
     lodash.set = object$1.set;
     lodash.setWith = object$1.setWith;
     lodash.shuffle = collection.shuffle;
-    lodash.slice = array$1.slice;
+    lodash.slice = array.slice;
     lodash.sortBy = collection.sortBy;
-    lodash.sortedUniq = array$1.sortedUniq;
-    lodash.sortedUniqBy = array$1.sortedUniqBy;
+    lodash.sortedUniq = array.sortedUniq;
+    lodash.sortedUniqBy = array.sortedUniqBy;
     lodash.split = string.split;
     lodash.spread = func.spread;
-    lodash.tail = array$1.tail;
-    lodash.take = array$1.take;
-    lodash.takeRight = array$1.takeRight;
-    lodash.takeRightWhile = array$1.takeRightWhile;
-    lodash.takeWhile = array$1.takeWhile;
+    lodash.tail = array.tail;
+    lodash.take = array.take;
+    lodash.takeRight = array.takeRight;
+    lodash.takeRightWhile = array.takeRightWhile;
+    lodash.takeWhile = array.takeWhile;
     lodash.tap = seq.tap;
     lodash.throttle = func.throttle;
     lodash.thru = thru;
@@ -19222,29 +19352,29 @@
     lodash.toPlainObject = lang.toPlainObject;
     lodash.transform = object$1.transform;
     lodash.unary = func.unary;
-    lodash.union = array$1.union;
-    lodash.unionBy = array$1.unionBy;
-    lodash.unionWith = array$1.unionWith;
-    lodash.uniq = array$1.uniq;
-    lodash.uniqBy = array$1.uniqBy;
-    lodash.uniqWith = array$1.uniqWith;
+    lodash.union = array.union;
+    lodash.unionBy = array.unionBy;
+    lodash.unionWith = array.unionWith;
+    lodash.uniq = array.uniq;
+    lodash.uniqBy = array.uniqBy;
+    lodash.uniqWith = array.uniqWith;
     lodash.unset = object$1.unset;
-    lodash.unzip = array$1.unzip;
-    lodash.unzipWith = array$1.unzipWith;
+    lodash.unzip = array.unzip;
+    lodash.unzipWith = array.unzipWith;
     lodash.update = object$1.update;
     lodash.updateWith = object$1.updateWith;
     lodash.values = object$1.values;
     lodash.valuesIn = object$1.valuesIn;
-    lodash.without = array$1.without;
+    lodash.without = array.without;
     lodash.words = string.words;
     lodash.wrap = func.wrap;
-    lodash.xor = array$1.xor;
-    lodash.xorBy = array$1.xorBy;
-    lodash.xorWith = array$1.xorWith;
-    lodash.zip = array$1.zip;
-    lodash.zipObject = array$1.zipObject;
-    lodash.zipObjectDeep = array$1.zipObjectDeep;
-    lodash.zipWith = array$1.zipWith;
+    lodash.xor = array.xor;
+    lodash.xorBy = array.xorBy;
+    lodash.xorWith = array.xorWith;
+    lodash.zip = array.zip;
+    lodash.zipObject = array.zipObject;
+    lodash.zipObjectDeep = array.zipObjectDeep;
+    lodash.zipWith = array.zipWith;
 
     // Add aliases.
     lodash.entries = object$1.toPairs;
@@ -19274,10 +19404,10 @@
     lodash.escapeRegExp = string.escapeRegExp;
     lodash.every = collection.every;
     lodash.find = collection.find;
-    lodash.findIndex = array$1.findIndex;
+    lodash.findIndex = array.findIndex;
     lodash.findKey = object$1.findKey;
     lodash.findLast = collection.findLast;
-    lodash.findLastIndex = array$1.findLastIndex;
+    lodash.findLastIndex = array.findLastIndex;
     lodash.findLastKey = object$1.findLastKey;
     lodash.floor = math.floor;
     lodash.forEach = collection.forEach;
@@ -19291,10 +19421,10 @@
     lodash.gte = lang.gte;
     lodash.has = object$1.has;
     lodash.hasIn = object$1.hasIn;
-    lodash.head = array$1.head;
+    lodash.head = array.head;
     lodash.identity = identity$1;
     lodash.includes = collection.includes;
-    lodash.indexOf = array$1.indexOf;
+    lodash.indexOf = array.indexOf;
     lodash.inRange = number.inRange;
     lodash.invoke = object$1.invoke;
     lodash.isArguments = lang.isArguments;
@@ -19334,10 +19464,10 @@
     lodash.isUndefined = lang.isUndefined;
     lodash.isWeakMap = lang.isWeakMap;
     lodash.isWeakSet = lang.isWeakSet;
-    lodash.join = array$1.join;
+    lodash.join = array.join;
     lodash.kebabCase = string.kebabCase;
     lodash.last = last;
-    lodash.lastIndexOf = array$1.lastIndexOf;
+    lodash.lastIndexOf = array.lastIndexOf;
     lodash.lowerCase = string.lowerCase;
     lodash.lowerFirst = string.lowerFirst;
     lodash.lt = lang.lt;
@@ -19349,7 +19479,7 @@
     lodash.min = math.min;
     lodash.minBy = math.minBy;
     lodash.multiply = math.multiply;
-    lodash.nth = array$1.nth;
+    lodash.nth = array.nth;
     lodash.noop = util.noop;
     lodash.now = date.now;
     lodash.pad = string.pad;
@@ -19367,12 +19497,12 @@
     lodash.size = collection.size;
     lodash.snakeCase = string.snakeCase;
     lodash.some = collection.some;
-    lodash.sortedIndex = array$1.sortedIndex;
-    lodash.sortedIndexBy = array$1.sortedIndexBy;
-    lodash.sortedIndexOf = array$1.sortedIndexOf;
-    lodash.sortedLastIndex = array$1.sortedLastIndex;
-    lodash.sortedLastIndexBy = array$1.sortedLastIndexBy;
-    lodash.sortedLastIndexOf = array$1.sortedLastIndexOf;
+    lodash.sortedIndex = array.sortedIndex;
+    lodash.sortedIndexBy = array.sortedIndexBy;
+    lodash.sortedIndexOf = array.sortedIndexOf;
+    lodash.sortedLastIndex = array.sortedLastIndex;
+    lodash.sortedLastIndexBy = array.sortedLastIndexBy;
+    lodash.sortedLastIndexOf = array.sortedLastIndexOf;
     lodash.startCase = string.startCase;
     lodash.startsWith = string.startsWith;
     lodash.subtract = math.subtract;
@@ -19399,7 +19529,7 @@
     // Add aliases.
     lodash.each = collection.forEach;
     lodash.eachRight = collection.forEachRight;
-    lodash.first = array$1.head;
+    lodash.first = array.head;
 
     mixin$1(lodash, (function() {
       var source = {};
@@ -19815,10 +19945,10 @@
 
     var proto = map$1.prototype;
 
-    var array$2 = Array.prototype;
+    var array$1 = Array.prototype;
 
-    var map$2 = array$2.map;
-    var slice$1 = array$2.slice;
+    var map$2 = array$1.map;
+    var slice$1 = array$1.slice;
 
     var implicit = {name: "implicit"};
 
@@ -21684,6 +21814,7 @@
     class Bivariate extends BaseChart {
 
       constructor(opts) {
+        opts = opts || {};
         super(opts);
         this.x(opts.x || new Measure());
         this.y(opts.y || new Measure());
@@ -21723,10 +21854,223 @@
 
     }
 
+    var slice$2 = Array.prototype.slice;
+
+    function identity$5(x) {
+      return x;
+    }
+
+    var top = 1;
+    var right = 2;
+    var bottom = 3;
+    var left = 4;
+    var epsilon = 1e-6;
+    function translateX(scale0, scale1, d) {
+      var x = scale0(d);
+      return "translate(" + (isFinite(x) ? x : scale1(d)) + ",0)";
+    }
+
+    function translateY(scale0, scale1, d) {
+      var y = scale0(d);
+      return "translate(0," + (isFinite(y) ? y : scale1(d)) + ")";
+    }
+
+    function center(scale) {
+      var width = scale.bandwidth() / 2;
+      return function(d) {
+        return scale(d) + width;
+      };
+    }
+
+    function axis(orient, scale) {
+      var tickArguments = [],
+          tickValues = null,
+          tickFormat = null,
+          tickSizeInner = 6,
+          tickSizeOuter = 6,
+          tickPadding = 3;
+
+      function axis(context) {
+        var values = tickValues == null ? (scale.ticks ? scale.ticks.apply(scale, tickArguments) : scale.domain()) : tickValues,
+            format = tickFormat == null ? (scale.tickFormat ? scale.tickFormat.apply(scale, tickArguments) : identity$5) : tickFormat,
+            spacing = Math.max(tickSizeInner, 0) + tickPadding,
+            transform = orient === top || orient === bottom ? translateX : translateY,
+            range = scale.range(),
+            range0 = range[0],
+            range1 = range[range.length - 1],
+            position = (scale.bandwidth ? center : identity$5)(scale.copy()),
+            selection = context.selection ? context.selection() : context,
+            path = selection.selectAll(".domain").data([null]),
+            tick = selection.selectAll(".tick").data(values, scale).order(),
+            tickExit = tick.exit(),
+            tickEnter = tick.enter().append("g", ".domain").attr("class", "tick"),
+            line = tick.select("line"),
+            text = tick.select("text");
+
+        path = path.merge(path.enter().append("path").attr("class", "domain"));
+        tick = tick.merge(tickEnter);
+        line = line.merge(tickEnter.append("line"));
+        text = text.merge(tickEnter.append("text"));
+
+        if (context !== selection) {
+          path = path.transition(context);
+          tick = tick.transition(context);
+          tickExit = tickExit.transition(context).style("opacity", epsilon).attr("transform", function(d) { return transform(position, this.parentNode.__axis || position, d); });
+          tickEnter.style("opacity", epsilon).attr("transform", function(d) { return transform(this.parentNode.__axis || position, position, d); });
+          line = line.transition(context);
+          text = text.transition(context);
+        }
+
+        tick.style("opacity", 1).attr("transform", function(d) { return transform(position, position, d); });
+        tickExit.remove();
+        text.text(format);
+
+        switch (orient) {
+          case top: {
+            path.attr("d", "M" + range0 + "," + -tickSizeOuter + "V0H" + range1 + "V" + -tickSizeOuter);
+            line.attr("x2", 0).attr("y2", -tickSizeInner);
+            text.attr("x", 0).attr("y", -spacing).attr("dy", "0em").style("text-anchor", "middle");
+            break;
+          }
+          case right: {
+            path.attr("d", "M" + tickSizeOuter + "," + range0 + "H0V" + range1 + "H" + tickSizeOuter);
+            line.attr("y2", 0).attr("x2", tickSizeInner);
+            text.attr("y", 0).attr("x", spacing).attr("dy", ".32em").style("text-anchor", "start");
+            break;
+          }
+          case bottom: {
+            path.attr("d", "M" + range0 + "," + tickSizeOuter + "V0H" + range1 + "V" + tickSizeOuter);
+            line.attr("x2", 0).attr("y2", tickSizeInner);
+            text.attr("x", 0).attr("y", spacing).attr("dy", ".71em").style("text-anchor", "middle");
+            break;
+          }
+          case left: {
+            path.attr("d", "M" + -tickSizeOuter + "," + range0 + "H0V" + range1 + "H" + -tickSizeOuter);
+            line.attr("y2", 0).attr("x2", -tickSizeInner);
+            text.attr("y", 0).attr("x", -spacing).attr("dy", ".32em").style("text-anchor", "end");
+            break;
+          }
+        }
+
+        selection.each(function() { this.__axis = position; });
+      }
+
+      axis.scale = function(_) {
+        return arguments.length ? (scale = _, axis) : scale;
+      };
+
+      axis.ticks = function() {
+        return tickArguments = slice$2.call(arguments), axis;
+      };
+
+      axis.tickArguments = function(_) {
+        return arguments.length ? (tickArguments = _ == null ? [] : slice$2.call(_), axis) : tickArguments.slice();
+      };
+
+      axis.tickValues = function(_) {
+        return arguments.length ? (tickValues = _ == null ? null : slice$2.call(_), axis) : tickValues && tickValues.slice();
+      };
+
+      axis.tickFormat = function(_) {
+        return arguments.length ? (tickFormat = _, axis) : tickFormat;
+      };
+
+      axis.tickSize = function(_) {
+        return arguments.length ? (tickSizeInner = tickSizeOuter = +_, axis) : tickSizeInner;
+      };
+
+      axis.tickSizeInner = function(_) {
+        return arguments.length ? (tickSizeInner = +_, axis) : tickSizeInner;
+      };
+
+      axis.tickSizeOuter = function(_) {
+        return arguments.length ? (tickSizeOuter = +_, axis) : tickSizeOuter;
+      };
+
+      axis.tickPadding = function(_) {
+        return arguments.length ? (tickPadding = +_, axis) : tickPadding;
+      };
+
+      return axis;
+    }
+
+    function axisBottom(scale) {
+      return axis(bottom, scale);
+    }
+
+    function axisLeft(scale) {
+      return axis(left, scale);
+    }
+
+    class Axes {
+
+      constructor(parent) {
+        this._parent = parent;
+      }
+
+      plotLeft(measure) {
+        var axis = axisLeft().scale(measure.scale());
+        if (!this._left_axis) {
+          this._left_axis = this._parent.g()
+                              .append('g')
+                              .attr('class', 'left axis');
+
+          this._left_axis.append('text')
+            .attr('transform', 'rotate(-90)')
+            .attr('y', 6)
+            .attr('dy', '.71em')
+            .style('text-anchor', 'end')
+            .text(this.leftAxisLabel());
+          this._left_axis.call(axis);
+        } else {
+          this._left_axis.transition().call(axis);
+        }
+
+      }
+
+      leftAxis() {
+        return this._left_axis;
+      }
+
+      leftAxisLabel(val) {
+        if (!val) {
+          return this._left_axis_label;
+        }
+        this._left_axis_label = val;
+        return this;
+      }
+
+      plotBottom(measure) {
+        if (this._bottom_axis) {
+          this._bottom_axis.remove();
+        }
+
+        var axis = axisBottom().scale(measure.scale());
+        this._bottom_axis = this._parent.g().append('g')
+            .attr('class', 'bottom axis')
+            .attr('transform', 'translate(0,' + this._parent.height() + ')')
+            .call(axis);
+      }
+
+      bottomAxis() {
+        return this._bottom_axis;
+      }
+
+      bottomAxisLabel(val) {
+        if (!val) {
+          return this._bottom_axis_label;
+        }
+        this._left_axis_label = val;
+        return this;
+      }
+
+
+    }
+
     var pi$1 = Math.PI;
     var tau$1 = 2 * pi$1;
-    var epsilon = 1e-6;
-    var tauEpsilon = tau$1 - epsilon;
+    var epsilon$1 = 1e-6;
+    var tauEpsilon = tau$1 - epsilon$1;
     function Path() {
       this._x0 = this._y0 = // start of current subpath
       this._x1 = this._y1 = null; // end of current subpath
@@ -21778,12 +22122,12 @@
         }
 
         // Or, is (x1,y1) coincident with (x0,y0)? Do nothing.
-        else if (!(l01_2 > epsilon));
+        else if (!(l01_2 > epsilon$1));
 
         // Or, are (x0,y0), (x1,y1) and (x2,y2) collinear?
         // Equivalently, is (x1,y1) coincident with (x2,y2)?
         // Or, is the radius zero? Line to (x1,y1).
-        else if (!(Math.abs(y01 * x21 - y21 * x01) > epsilon) || !r) {
+        else if (!(Math.abs(y01 * x21 - y21 * x01) > epsilon$1) || !r) {
           this._.push(
             "L", this._x1 = x1, ",", this._y1 = y1
           );
@@ -21802,7 +22146,7 @@
               t21 = l / l21;
 
           // If the start tangent is not coincident with (x0,y0), line to.
-          if (Math.abs(t01 - 1) > epsilon) {
+          if (Math.abs(t01 - 1) > epsilon$1) {
             this._.push(
               "L", x1 + t01 * x01, ",", y1 + t01 * y01
             );
@@ -21833,7 +22177,7 @@
         }
 
         // Or, is (x0,y0) not coincident with the previous point? Line to (x0,y0).
-        else if (Math.abs(this._x1 - x0) > epsilon || Math.abs(this._y1 - y0) > epsilon) {
+        else if (Math.abs(this._x1 - x0) > epsilon$1 || Math.abs(this._y1 - y0) > epsilon$1) {
           this._.push(
             "L", x0, ",", y0
           );
@@ -21872,11 +22216,11 @@
       };
     }
 
-    var slice$2 = Array.prototype.slice;
+    var slice$3 = Array.prototype.slice;
 
     function bind$1(curve, args) {
       if (args.length < 2) return curve;
-      args = slice$2.call(args);
+      args = slice$3.call(args);
       args[0] = null;
       return function(context) {
         args[0] = context;
@@ -22072,176 +22416,70 @@
       bezierCurveTo: function(x1, y1, x2, y2, x, y) { this._context.bezierCurveTo(y1, x1, y2, x2, y, x); }
     };
 
+    function pathTween(new_path, precision) {
+        return function(data) {
+          var path0 = this,
+              path1 = path0.cloneNode(),
+              n0 = path0.getTotalLength(),
+              n1 = (path1.setAttribute('d', new_path(data)), path1).getTotalLength();
+
+          // Uniform sampling of distance based on specified precision.
+          var distances = [0], i = 0, dt = precision / Math.max(n0, n1);
+          while ((i += dt) < 1) {
+            distances.push(i);
+          }
+          distances.push(1);
+
+          // Compute point-interpolators at each distance.
+          var points = distances.map(function(t) {
+            var p0 = path0.getPointAtLength(t * n0),
+                p1 = path1.getPointAtLength(t * n1);
+            return interpolateArray([p0.x, p0.y], [p1.x, p1.y]);
+          });
+
+          return function(t) {
+            return t < 1 ? 'M' + points.map(function(p) { return p(t); }).join('L') : new_path(data);
+          };
+        };
+      }
+
     class LineChart extends Bivariate {
 
       constructor(opts) {
         super(opts);
+        this._axes = new Axes(this);
       }
 
       plot() {
         var data = this.data();
+        var x = this.x();
+        x.range([0, this.width()]);
+
+        var y = this.y();
+        y.range([this.height(), 0]);
+
         var line$$ = line()
-            .x(this.x().m())
-            .y(this.y().m());
+            .x(x.m())
+            .y(y.m());
 
         var path = this.g().selectAll('path.line')
             .data([data]);
 
-        path.attr('d', line$$);
 
         path.enter().append('path')
             .attr('d', line$$)
             .attr('class', 'line');
+
+        path.transition()
+            .duration(500)
+            .attrTween('d', pathTween(line$$, 4));
       }
 
-    }
-
-    var slice$4 = Array.prototype.slice;
-
-    function identity$6(x) {
-      return x;
-    }
-
-    var top = 1;
-    var right = 2;
-    var bottom = 3;
-    var left = 4;
-    var epsilon$2 = 1e-6;
-    function translateX(scale0, scale1, d) {
-      var x = scale0(d);
-      return "translate(" + (isFinite(x) ? x : scale1(d)) + ",0)";
-    }
-
-    function translateY(scale0, scale1, d) {
-      var y = scale0(d);
-      return "translate(0," + (isFinite(y) ? y : scale1(d)) + ")";
-    }
-
-    function center(scale) {
-      var width = scale.bandwidth() / 2;
-      return function(d) {
-        return scale(d) + width;
-      };
-    }
-
-    function axis(orient, scale) {
-      var tickArguments = [],
-          tickValues = null,
-          tickFormat = null,
-          tickSizeInner = 6,
-          tickSizeOuter = 6,
-          tickPadding = 3;
-
-      function axis(context) {
-        var values = tickValues == null ? (scale.ticks ? scale.ticks.apply(scale, tickArguments) : scale.domain()) : tickValues,
-            format = tickFormat == null ? (scale.tickFormat ? scale.tickFormat.apply(scale, tickArguments) : identity$6) : tickFormat,
-            spacing = Math.max(tickSizeInner, 0) + tickPadding,
-            transform = orient === top || orient === bottom ? translateX : translateY,
-            range = scale.range(),
-            range0 = range[0],
-            range1 = range[range.length - 1],
-            position = (scale.bandwidth ? center : identity$6)(scale.copy()),
-            selection = context.selection ? context.selection() : context,
-            path = selection.selectAll(".domain").data([null]),
-            tick = selection.selectAll(".tick").data(values, scale).order(),
-            tickExit = tick.exit(),
-            tickEnter = tick.enter().append("g", ".domain").attr("class", "tick"),
-            line = tick.select("line"),
-            text = tick.select("text");
-
-        path = path.merge(path.enter().append("path").attr("class", "domain"));
-        tick = tick.merge(tickEnter);
-        line = line.merge(tickEnter.append("line"));
-        text = text.merge(tickEnter.append("text"));
-
-        if (context !== selection) {
-          path = path.transition(context);
-          tick = tick.transition(context);
-          tickExit = tickExit.transition(context).style("opacity", epsilon$2).attr("transform", function(d) { return transform(position, this.parentNode.__axis || position, d); });
-          tickEnter.style("opacity", epsilon$2).attr("transform", function(d) { return transform(this.parentNode.__axis || position, position, d); });
-          line = line.transition(context);
-          text = text.transition(context);
-        }
-
-        tick.style("opacity", 1).attr("transform", function(d) { return transform(position, position, d); });
-        tickExit.remove();
-        text.text(format);
-
-        switch (orient) {
-          case top: {
-            path.attr("d", "M" + range0 + "," + -tickSizeOuter + "V0H" + range1 + "V" + -tickSizeOuter);
-            line.attr("x2", 0).attr("y2", -tickSizeInner);
-            text.attr("x", 0).attr("y", -spacing).attr("dy", "0em").style("text-anchor", "middle");
-            break;
-          }
-          case right: {
-            path.attr("d", "M" + tickSizeOuter + "," + range0 + "H0V" + range1 + "H" + tickSizeOuter);
-            line.attr("y2", 0).attr("x2", tickSizeInner);
-            text.attr("y", 0).attr("x", spacing).attr("dy", ".32em").style("text-anchor", "start");
-            break;
-          }
-          case bottom: {
-            path.attr("d", "M" + range0 + "," + tickSizeOuter + "V0H" + range1 + "V" + tickSizeOuter);
-            line.attr("x2", 0).attr("y2", tickSizeInner);
-            text.attr("x", 0).attr("y", spacing).attr("dy", ".71em").style("text-anchor", "middle");
-            break;
-          }
-          case left: {
-            path.attr("d", "M" + -tickSizeOuter + "," + range0 + "H0V" + range1 + "H" + -tickSizeOuter);
-            line.attr("y2", 0).attr("x2", -tickSizeInner);
-            text.attr("y", 0).attr("x", -spacing).attr("dy", ".32em").style("text-anchor", "end");
-            break;
-          }
-        }
-
-        selection.each(function() { this.__axis = position; });
+      decorate() {
+        this._axes.plotLeft(this.y());
+        this._axes.plotBottom(this.x());
       }
 
-      axis.scale = function(_) {
-        return arguments.length ? (scale = _, axis) : scale;
-      };
-
-      axis.ticks = function() {
-        return tickArguments = slice$4.call(arguments), axis;
-      };
-
-      axis.tickArguments = function(_) {
-        return arguments.length ? (tickArguments = _ == null ? [] : slice$4.call(_), axis) : tickArguments.slice();
-      };
-
-      axis.tickValues = function(_) {
-        return arguments.length ? (tickValues = _ == null ? null : slice$4.call(_), axis) : tickValues && tickValues.slice();
-      };
-
-      axis.tickFormat = function(_) {
-        return arguments.length ? (tickFormat = _, axis) : tickFormat;
-      };
-
-      axis.tickSize = function(_) {
-        return arguments.length ? (tickSizeInner = tickSizeOuter = +_, axis) : tickSizeInner;
-      };
-
-      axis.tickSizeInner = function(_) {
-        return arguments.length ? (tickSizeInner = +_, axis) : tickSizeInner;
-      };
-
-      axis.tickSizeOuter = function(_) {
-        return arguments.length ? (tickSizeOuter = +_, axis) : tickSizeOuter;
-      };
-
-      axis.tickPadding = function(_) {
-        return arguments.length ? (tickPadding = +_, axis) : tickPadding;
-      };
-
-      return axis;
-    }
-
-    function axisBottom(scale) {
-      return axis(bottom, scale);
-    }
-
-    function axisLeft(scale) {
-      return axis(left, scale);
     }
 
     class TimeSeries extends LineChart {
@@ -22277,71 +22515,6 @@
               .attr('class', 'y axis')
               .call(yAxis);
       }
-    }
-
-    class Axes {
-
-      constructor(parent) {
-        this._parent = parent;
-      }
-
-      plotLeft(measure) {
-        var axis = axisLeft().scale(measure.scale());
-        if (!this._left_axis) {
-          this._left_axis = this._parent.g()
-                              .append('g')
-                              .attr('class', 'left axis');
-
-          this._left_axis.append('text')
-            .attr('transform', 'rotate(-90)')
-            .attr('y', 6)
-            .attr('dy', '.71em')
-            .style('text-anchor', 'end')
-            .text(this.leftAxisLabel());
-          this._left_axis.call(axis);
-        } else {
-          this._left_axis.transition().call(axis);
-        }
-
-      }
-
-      leftAxis() {
-        return this._left_axis;
-      }
-
-      leftAxisLabel(val) {
-        if (!val) {
-          return this._left_axis_label;
-        }
-        this._left_axis_label = val;
-        return this;
-      }
-
-      plotBottom(measure) {
-        if (this._bottom_axis) {
-          this._bottom_axis.remove();
-        }
-
-        var axis = axisBottom().scale(measure.scale());
-        this._bottom_axis = this._parent.g().append('g')
-            .attr('class', 'bottom axis')
-            .attr('transform', 'translate(0,' + this._parent.height() + ')')
-            .call(axis);
-      }
-
-      bottomAxis() {
-        return this._bottom_axis;
-      }
-
-      bottomAxisLabel(val) {
-        if (!val) {
-          return this._bottom_axis_label;
-        }
-        this._left_axis_label = val;
-        return this;
-      }
-
-
     }
 
     class Histogram extends Bivariate {
@@ -22491,6 +22664,78 @@
 
     }
 
+    class Formula {
+
+      constructor(opts) {
+        this.sample(opts.sample || 10);
+        var domain = opts.domain || [0, 1];
+        this.domain(domain);
+        this.input(opts.input || new Measure());
+        var output = new Measure({
+          val: opts.val
+        });
+        this.output(output);
+        this.fit();
+      }
+
+      val(val) {
+        if (isUndefined(val)) {
+          return this.output().val();
+        }
+        this.output().val(val);
+        return this;
+      }
+
+      sample(val) {
+        if (isUndefined(val)) {
+          return this._sample;
+        }
+        this._sample = val;
+        return this;
+      }
+
+      domain(val) {
+        if (isUndefined(val)) {
+          return this._domain;
+        }
+        this._domain = val;
+        return this;
+      }
+
+      input(val) {
+        if (isUndefined(val)) {
+          return this._input;
+        }
+        this._input = val;
+        return this;
+      }
+
+      output(val) {
+        if (isUndefined(val)) {
+          return this._output;
+        }
+        this._output = val;
+        return this;
+      }
+
+      eval(val) {
+        return this._output.val()(val);
+      }
+
+      data() {
+        var d = this.domain();
+        var num_points = Math.abs(d[0] - d[1]) / this.sample();
+        return range(d[0], d[1], num_points);
+      }
+
+      fit() {
+        var data = this.data();
+        this.input().fit(data);
+        this.output().fit(data);
+      }
+
+    }
+
     exports.BaseChart = BaseChart;
     exports.LineChart = LineChart;
     exports.TimeSeries = TimeSeries;
@@ -22498,5 +22743,6 @@
     exports.GroupedHistogram = GroupedHistogram;
     exports.ScatterChart = ScatterChart;
     exports.Measure = Measure;
+    exports.Formula = Formula;
 
 }));

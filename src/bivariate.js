@@ -5,6 +5,7 @@ import {default as Measure} from './measure';
 class Bivariate extends BaseChart {
 
   constructor(opts) {
+    opts = opts || {};
     super(opts);
     this.x(opts.x || new Measure());
     this.y(opts.y || new Measure());

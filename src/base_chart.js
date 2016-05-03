@@ -122,11 +122,13 @@ class BaseChart {
     this.plot();
     // and decorate should draw/update non data elements (such as axes)
     this.decorate();
+    return this;
   }
 
   update() {
     this.plot();
     this.decorate();
+    return this;
   }
 
   // utility function to hide the kludge

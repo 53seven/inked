@@ -5,3 +5,4 @@ export {default as Histogram} from './src/histogram';
 export {default as GroupedHistogram} from './src/grouped_histogram';
 export {default as ScatterChart} from './src/scatter';
 export {default as Measure} from './src/measure';
+export {default as Formula} from './src/formula';
