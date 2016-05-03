@@ -15,9 +15,11 @@ class LineChart extends Bivariate {
     var data = this.data();
     var x = this.x();
     x.range([0, this.width()]);
+    x.fit(data);
 
     var y = this.y();
     y.range([this.height(), 0]);
+    y.fit(data);
 
     var line = d3_shape.line()
         .x(x.m())

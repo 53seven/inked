@@ -980,7 +980,7 @@
       restart: function(callback, delay, time) {
         if (typeof callback !== "function") throw new TypeError("callback is not a function");
         time = (time == null ? now() : +time) + (delay == null ? 0 : +delay);
-        if (!this._call) {
+        if (!this._next && taskTail !== this) {
           if (taskTail) taskTail._next = this;
           else taskHead = this;
           taskTail = this;
@@ -2913,169 +2913,6 @@
     }
 
     /**
-     * Checks if `value` is object-like. A value is object-like if it's not `null`
-     * and has a `typeof` result of "object".
-     *
-     * @static
-     * @memberOf _
-     * @since 4.0.0
-     * @category Lang
-     * @param {*} value The value to check.
-     * @returns {boolean} Returns `true` if `value` is object-like, else `false`.
-     * @example
-     *
-     * _.isObjectLike({});
-     * // => true
-     *
-     * _.isObjectLike([1, 2, 3]);
-     * // => true
-     *
-     * _.isObjectLike(_.noop);
-     * // => false
-     *
-     * _.isObjectLike(null);
-     * // => false
-     */
-    function isObjectLike(value) {
-      return !!value && typeof value == 'object';
-    }
-
-    /** `Object#toString` result references. */
-    var symbolTag = '[object Symbol]';
-
-    /** Used for built-in method references. */
-    var objectProto = Object.prototype;
-
-    /**
-     * Used to resolve the
-     * [`toStringTag`](http://ecma-international.org/ecma-262/6.0/#sec-object.prototype.tostring)
-     * of values.
-     */
-    var objectToString = objectProto.toString;
-
-    /**
-     * Checks if `value` is classified as a `Symbol` primitive or object.
-     *
-     * @static
-     * @memberOf _
-     * @since 4.0.0
-     * @category Lang
-     * @param {*} value The value to check.
-     * @returns {boolean} Returns `true` if `value` is correctly classified,
-     *  else `false`.
-     * @example
-     *
-     * _.isSymbol(Symbol.iterator);
-     * // => true
-     *
-     * _.isSymbol('abc');
-     * // => false
-     */
-    function isSymbol(value) {
-      return typeof value == 'symbol' ||
-        (isObjectLike(value) && objectToString.call(value) == symbolTag);
-    }
-
-    /** Used as references for various `Number` constants. */
-    var NAN = 0 / 0;
-
-    /**
-     * The base implementation of `_.toNumber` which doesn't ensure correct
-     * conversions of binary, hexadecimal, or octal string values.
-     *
-     * @private
-     * @param {*} value The value to process.
-     * @returns {number} Returns the number.
-     */
-    function baseToNumber(value) {
-      if (typeof value == 'number') {
-        return value;
-      }
-      if (isSymbol(value)) {
-        return NAN;
-      }
-      return +value;
-    }
-
-    /**
-     * Checks if `value` is a global object.
-     *
-     * @private
-     * @param {*} value The value to check.
-     * @returns {null|Object} Returns `value` if it's a global object, else `null`.
-     */
-    function checkGlobal(value) {
-      return (value && value.Object === Object) ? value : null;
-    }
-
-    /** Used to determine if values are of the language type `Object`. */
-    var objectTypes = {
-      'function': true,
-      'object': true
-    };
-
-    /** Detect free variable `exports`. */
-    var freeExports = (objectTypes[typeof exports] && exports && !exports.nodeType)
-      ? exports
-      : undefined;
-
-    /** Detect free variable `module`. */
-    var freeModule = (objectTypes[typeof module] && module && !module.nodeType)
-      ? module
-      : undefined;
-
-    /** Detect free variable `global` from Node.js. */
-    var freeGlobal = checkGlobal(freeExports && freeModule && typeof global == 'object' && global);
-
-    /** Detect free variable `self`. */
-    var freeSelf = checkGlobal(objectTypes[typeof self] && self);
-
-    /** Detect free variable `window`. */
-    var freeWindow = checkGlobal(objectTypes[typeof window] && window);
-
-    /** Detect `this` as the global object. */
-    var thisGlobal = checkGlobal(objectTypes[typeof this] && this);
-
-    /**
-     * Used as a reference to the global object.
-     *
-     * The `this` value is used if it's the global object to avoid Greasemonkey's
-     * restricted `window` object, otherwise the `window` object is used.
-     */
-    var root$2 = freeGlobal ||
-      ((freeWindow !== (thisGlobal && thisGlobal.window)) && freeWindow) ||
-        freeSelf || thisGlobal || Function('return this')();
-
-    /** Built-in value references. */
-    var Symbol = root$2.Symbol;
-
-    /** Used as references for various `Number` constants. */
-    var INFINITY = 1 / 0;
-
-    /** Used to convert symbols to primitives and strings. */
-    var symbolProto = Symbol ? Symbol.prototype : undefined;
-    var symbolToString = symbolProto ? symbolProto.toString : undefined;
-    /**
-     * The base implementation of `_.toString` which doesn't convert nullish
-     * values to empty strings.
-     *
-     * @private
-     * @param {*} value The value to process.
-     * @returns {string} Returns the string.
-     */
-    function baseToString(value) {
-      // Exit early for strings to avoid a performance hit in some environments.
-      if (typeof value == 'string') {
-        return value;
-      }
-      if (isSymbol(value)) {
-        return symbolToString ? symbolToString.call(value) : '';
-      }
-      var result = (value + '');
-      return (result == '0' && (1 / value) == -INFINITY) ? '-0' : result;
-    }
-
-    /**
      * Creates a function that performs a mathematical operation on two values.
      *
      * @private
@@ -3092,17 +2929,7 @@
           result = value;
         }
         if (other !== undefined) {
-          if (result === undefined) {
-            return other;
-          }
-          if (typeof value == 'string' || typeof other == 'string') {
-            value = baseToString(value);
-            other = baseToString(other);
-          } else {
-            value = baseToNumber(value);
-            other = baseToNumber(other);
-          }
-          result = operator(value, other);
+          result = result === undefined ? other : operator(result, other);
         }
         return result;
       };
@@ -3160,14 +2987,14 @@
     var funcTag = '[object Function]';
     var genTag = '[object GeneratorFunction]';
     /** Used for built-in method references. */
-    var objectProto$1 = Object.prototype;
+    var objectProto = Object.prototype;
 
     /**
      * Used to resolve the
      * [`toStringTag`](http://ecma-international.org/ecma-262/6.0/#sec-object.prototype.tostring)
      * of values.
      */
-    var objectToString$1 = objectProto$1.toString;
+    var objectToString = objectProto.toString;
 
     /**
      * Checks if `value` is classified as a `Function` object.
@@ -3191,12 +3018,76 @@
       // The use of `Object#toString` avoids issues with the `typeof` operator
       // in Safari 8 which returns 'object' for typed array and weak map constructors,
       // and PhantomJS 1.9 which returns 'function' for `NodeList` instances.
-      var tag = isObject(value) ? objectToString$1.call(value) : '';
+      var tag = isObject(value) ? objectToString.call(value) : '';
       return tag == funcTag || tag == genTag;
     }
 
+    /**
+     * Checks if `value` is object-like. A value is object-like if it's not `null`
+     * and has a `typeof` result of "object".
+     *
+     * @static
+     * @memberOf _
+     * @since 4.0.0
+     * @category Lang
+     * @param {*} value The value to check.
+     * @returns {boolean} Returns `true` if `value` is object-like, else `false`.
+     * @example
+     *
+     * _.isObjectLike({});
+     * // => true
+     *
+     * _.isObjectLike([1, 2, 3]);
+     * // => true
+     *
+     * _.isObjectLike(_.noop);
+     * // => false
+     *
+     * _.isObjectLike(null);
+     * // => false
+     */
+    function isObjectLike(value) {
+      return !!value && typeof value == 'object';
+    }
+
+    /** `Object#toString` result references. */
+    var symbolTag = '[object Symbol]';
+
+    /** Used for built-in method references. */
+    var objectProto$1 = Object.prototype;
+
+    /**
+     * Used to resolve the
+     * [`toStringTag`](http://ecma-international.org/ecma-262/6.0/#sec-object.prototype.tostring)
+     * of values.
+     */
+    var objectToString$1 = objectProto$1.toString;
+
+    /**
+     * Checks if `value` is classified as a `Symbol` primitive or object.
+     *
+     * @static
+     * @memberOf _
+     * @since 4.0.0
+     * @category Lang
+     * @param {*} value The value to check.
+     * @returns {boolean} Returns `true` if `value` is correctly classified,
+     *  else `false`.
+     * @example
+     *
+     * _.isSymbol(Symbol.iterator);
+     * // => true
+     *
+     * _.isSymbol('abc');
+     * // => false
+     */
+    function isSymbol(value) {
+      return typeof value == 'symbol' ||
+        (isObjectLike(value) && objectToString$1.call(value) == symbolTag);
+    }
+
     /** Used as references for various `Number` constants. */
-    var NAN$1 = 0 / 0;
+    var NAN = 0 / 0;
 
     /** Used to match leading and trailing whitespace. */
     var reTrim = /^\s+|\s+$/g;
@@ -3241,7 +3132,7 @@
         return value;
       }
       if (isSymbol(value)) {
-        return NAN$1;
+        return NAN;
       }
       if (isObject(value)) {
         var other = isFunction(value.valueOf) ? value.valueOf() : value;
@@ -3254,10 +3145,10 @@
       var isBinary = reIsBinary.test(value);
       return (isBinary || reIsOctal.test(value))
         ? freeParseInt(value.slice(2), isBinary ? 2 : 8)
-        : (reIsBadHex.test(value) ? NAN$1 : +value);
+        : (reIsBadHex.test(value) ? NAN : +value);
     }
 
-    var INFINITY$1 = 1 / 0;
+    var INFINITY = 1 / 0;
     var MAX_INTEGER = 1.7976931348623157e+308;
     /**
      * Converts `value` to an integer.
@@ -3290,7 +3181,7 @@
         return value === 0 ? value : 0;
       }
       value = toNumber(value);
-      if (value === INFINITY$1 || value === -INFINITY$1) {
+      if (value === INFINITY || value === -INFINITY) {
         var sign = (value < 0 ? -1 : 1);
         return sign * MAX_INTEGER;
       }
@@ -3460,6 +3351,55 @@
       var value = object[key];
       return isNative(value) ? value : undefined;
     }
+
+    /**
+     * Checks if `value` is a global object.
+     *
+     * @private
+     * @param {*} value The value to check.
+     * @returns {null|Object} Returns `value` if it's a global object, else `null`.
+     */
+    function checkGlobal(value) {
+      return (value && value.Object === Object) ? value : null;
+    }
+
+    /** Used to determine if values are of the language type `Object`. */
+    var objectTypes = {
+      'function': true,
+      'object': true
+    };
+
+    /** Detect free variable `exports`. */
+    var freeExports = (objectTypes[typeof exports] && exports && !exports.nodeType)
+      ? exports
+      : undefined;
+
+    /** Detect free variable `module`. */
+    var freeModule = (objectTypes[typeof module] && module && !module.nodeType)
+      ? module
+      : undefined;
+
+    /** Detect free variable `global` from Node.js. */
+    var freeGlobal = checkGlobal(freeExports && freeModule && typeof global == 'object' && global);
+
+    /** Detect free variable `self`. */
+    var freeSelf = checkGlobal(objectTypes[typeof self] && self);
+
+    /** Detect free variable `window`. */
+    var freeWindow = checkGlobal(objectTypes[typeof window] && window);
+
+    /** Detect `this` as the global object. */
+    var thisGlobal = checkGlobal(objectTypes[typeof this] && this);
+
+    /**
+     * Used as a reference to the global object.
+     *
+     * The `this` value is used if it's the global object to avoid Greasemonkey's
+     * restricted `window` object, otherwise the `window` object is used.
+     */
+    var root$2 = freeGlobal ||
+      ((freeWindow !== (thisGlobal && thisGlobal.window)) && freeWindow) ||
+        freeSelf || thisGlobal || Function('return this')();
 
     /* Built-in method references that are verified to be native. */
     var WeakMap = getNative(root$2, 'WeakMap');
@@ -4139,10 +4079,9 @@
      * @returns {boolean} Returns `true` if `value` is a valid index, else `false`.
      */
     function isIndex(value, length) {
+      value = (typeof value == 'number' || reIsUint.test(value)) ? +value : -1;
       length = length == null ? MAX_SAFE_INTEGER : length;
-      return !!length &&
-        (typeof value == 'number' || reIsUint.test(value)) &&
-        (value > -1 && value % 1 == 0 && value < length);
+      return value > -1 && value % 1 == 0 && value < length;
     }
 
     /* Built-in method references for those with the same name as other `lodash` methods. */
@@ -5140,7 +5079,6 @@
      * @param {Object} object The destination object.
      * @param {...Object} [sources] The source objects.
      * @returns {Object} Returns `object`.
-     * @see _.assignIn
      * @example
      *
      * function Foo() {
@@ -5294,7 +5232,6 @@
      * @param {Object} object The destination object.
      * @param {...Object} [sources] The source objects.
      * @returns {Object} Returns `object`.
-     * @see _.assign
      * @example
      *
      * function Foo() {
@@ -5338,7 +5275,6 @@
      * @param {...Object} sources The source objects.
      * @param {Function} [customizer] The function to customize assigned values.
      * @returns {Object} Returns `object`.
-     * @see _.assignWith
      * @example
      *
      * function customizer(objValue, srcValue) {
@@ -5370,7 +5306,6 @@
      * @param {...Object} sources The source objects.
      * @param {Function} [customizer] The function to customize assigned values.
      * @returns {Object} Returns `object`.
-     * @see _.assignInWith
      * @example
      *
      * function customizer(objValue, srcValue) {
@@ -5507,9 +5442,8 @@
      */
     function isKeyable(value) {
       var type = typeof value;
-      return (type == 'string' || type == 'number' || type == 'symbol' || type == 'boolean')
-        ? (value !== '__proto__')
-        : (value === null);
+      return type == 'number' || type == 'boolean' ||
+        (type == 'string' && value != '__proto__') || value == null;
     }
 
     /**
@@ -5762,6 +5696,15 @@
     // Assign cache to `_.memoize`.
     memoize.Cache = MapCache;
 
+    /** Built-in value references. */
+    var Symbol = root$2.Symbol;
+
+    /** Used as references for various `Number` constants. */
+    var INFINITY$1 = 1 / 0;
+
+    /** Used to convert symbols to primitives and strings. */
+    var symbolProto = Symbol ? Symbol.prototype : undefined;
+    var symbolToString = symbolProto ? symbolProto.toString : undefined;
     /**
      * Converts `value` to a string. An empty string is returned for `null`
      * and `undefined` values. The sign of `-0` is preserved.
@@ -5784,7 +5727,18 @@
      * // => '1,2,3'
      */
     function toString(value) {
-      return value == null ? '' : baseToString(value);
+      // Exit early for strings to avoid a performance hit in some environments.
+      if (typeof value == 'string') {
+        return value;
+      }
+      if (value == null) {
+        return '';
+      }
+      if (isSymbol(value)) {
+        return symbolToString ? symbolToString.call(value) : '';
+      }
+      var result = (value + '');
+      return (result == '0' && (1 / value) == -INFINITY$1) ? '-0' : result;
     }
 
     /** Used to match property names within property paths. */
@@ -5830,34 +5784,13 @@
      * @returns {boolean} Returns `true` if `value` is a property name, else `false`.
      */
     function isKey(value, object) {
-      if (isArray(value)) {
-        return false;
-      }
       var type = typeof value;
-      if (type == 'number' || type == 'symbol' || type == 'boolean' ||
-          value == null || isSymbol(value)) {
+      if (type == 'number' || type == 'symbol') {
         return true;
       }
-      return reIsPlainProp.test(value) || !reIsDeepProp.test(value) ||
-        (object != null && value in Object(object));
-    }
-
-    /** Used as references for various `Number` constants. */
-    var INFINITY$2 = 1 / 0;
-
-    /**
-     * Converts `value` to a string key if it's not a string or symbol.
-     *
-     * @private
-     * @param {*} value The value to inspect.
-     * @returns {string|symbol} Returns the key.
-     */
-    function toKey(value) {
-      if (typeof value == 'string' || isSymbol(value)) {
-        return value;
-      }
-      var result = (value + '');
-      return (result == '0' && (1 / value) == -INFINITY$2) ? '-0' : result;
+      return !isArray(value) &&
+        (isSymbol(value) || reIsPlainProp.test(value) || !reIsDeepProp.test(value) ||
+          (object != null && value in Object(object)));
     }
 
     /**
@@ -5875,7 +5808,7 @@
           length = path.length;
 
       while (object != null && index < length) {
-        object = object[toKey(path[index++])];
+        object = object[path[index++]];
       }
       return (index && index == length) ? object : undefined;
     }
@@ -6223,7 +6156,6 @@
      */
     var bindAll = rest(function(object, methodNames) {
       arrayEach(baseFlatten(methodNames, 1), function(key) {
-        key = toKey(key);
         object[key] = bind(object[key], object);
       });
       return object;
@@ -6547,11 +6479,11 @@
     var rsLowerRange = 'a-z\\xdf-\\xf6\\xf8-\\xff';
     var rsMathOpRange = '\\xac\\xb1\\xd7\\xf7';
     var rsNonCharRange = '\\x00-\\x2f\\x3a-\\x40\\x5b-\\x60\\x7b-\\xbf';
-    var rsPunctuationRange = '\\u2000-\\u206f';
+    var rsQuoteRange = '\\u2018\\u2019\\u201c\\u201d';
     var rsSpaceRange = ' \\t\\x0b\\f\\xa0\\ufeff\\n\\r\\u2028\\u2029\\u1680\\u180e\\u2000\\u2001\\u2002\\u2003\\u2004\\u2005\\u2006\\u2007\\u2008\\u2009\\u200a\\u202f\\u205f\\u3000';
     var rsUpperRange = 'A-Z\\xc0-\\xd6\\xd8-\\xde';
     var rsVarRange$2 = '\\ufe0e\\ufe0f';
-    var rsBreakRange = rsMathOpRange + rsNonCharRange + rsPunctuationRange + rsSpaceRange;
+    var rsBreakRange = rsMathOpRange + rsNonCharRange + rsQuoteRange + rsSpaceRange;
     var rsApos$1 = "['\u2019]";
     var rsBreak = '[' + rsBreakRange + ']';
     var rsCombo$2 = '[' + rsComboMarksRange$3 + rsComboSymbolsRange$3 + ']';
@@ -7634,7 +7566,6 @@
      * @category Lang
      * @param {*} value The value to clone.
      * @returns {*} Returns the cloned value.
-     * @see _.cloneDeep
      * @example
      *
      * var objects = [{ 'a': 1 }, { 'b': 2 }];
@@ -7656,7 +7587,6 @@
      * @category Lang
      * @param {*} value The value to recursively clone.
      * @returns {*} Returns the deep cloned value.
-     * @see _.clone
      * @example
      *
      * var objects = [{ 'a': 1 }, { 'b': 2 }];
@@ -7679,7 +7609,6 @@
      * @param {*} value The value to recursively clone.
      * @param {Function} [customizer] The function to customize cloning.
      * @returns {*} Returns the deep cloned value.
-     * @see _.cloneWith
      * @example
      *
      * function customizer(value) {
@@ -7714,7 +7643,6 @@
      * @param {*} value The value to clone.
      * @param {Function} [customizer] The function to customize cloning.
      * @returns {*} Returns the cloned value.
-     * @see _.cloneDeepWith
      * @example
      *
      * function customizer(value) {
@@ -8510,7 +8438,7 @@
           length = path.length;
 
       while (++index < length) {
-        var key = toKey(path[index]);
+        var key = path[index];
         if (!(result = object != null && hasFunc(object, key))) {
           break;
         }
@@ -8566,7 +8494,7 @@
      */
     function baseMatchesProperty(path, srcValue) {
       if (isKey(path) && isStrictComparable(srcValue)) {
-        return matchesStrictComparable(toKey(path), srcValue);
+        return matchesStrictComparable(path, srcValue);
       }
       return function(object) {
         var objValue = get$2(object, path);
@@ -8612,7 +8540,7 @@
      * // => [1, 2]
      */
     function property(path) {
-      return isKey(path) ? baseProperty(toKey(path)) : basePropertyDeep(path);
+      return isKey(path) ? baseProperty(path) : basePropertyDeep(path);
     }
 
     /**
@@ -9287,7 +9215,6 @@
      * @param {Object} object The destination object.
      * @param {...Object} [sources] The source objects.
      * @returns {Object} Returns `object`.
-     * @see _.defaultsDeep
      * @example
      *
      * _.defaults({ 'user': 'barney' }, { 'age': 36 }, { 'user': 'fred' });
@@ -9592,7 +9519,6 @@
      * @param {Object} object The destination object.
      * @param {...Object} [sources] The source objects.
      * @returns {Object} Returns `object`.
-     * @see _.defaults
      * @example
      *
      * _.defaultsDeep({ 'user': { 'name': 'barney' } }, { 'user': { 'name': 'fred', 'age': 36 } });
@@ -9871,7 +9797,6 @@
         var value = array[index],
             computed = iteratee ? iteratee(value) : value;
 
-        value = (comparator || value !== 0) ? value : 0;
         if (isCommon && computed === computed) {
           var valuesIndex = valuesLength;
           while (valuesIndex--) {
@@ -9901,7 +9826,6 @@
      * @param {Array} array The array to inspect.
      * @param {...Array} [values] The values to exclude.
      * @returns {Array} Returns the new array of filtered values.
-     * @see _.without, _.xor
      * @example
      *
      * _.difference([3, 2, 1], [4, 2]);
@@ -10209,7 +10133,6 @@
      * @param {Array|Object} collection The collection to iterate over.
      * @param {Function} [iteratee=_.identity] The function invoked per iteration.
      * @returns {Array|Object} Returns `collection`.
-     * @see _.forEachRight
      * @example
      *
      * _([1, 2]).forEach(function(value) {
@@ -10294,7 +10217,6 @@
      * @param {Array|Object} collection The collection to iterate over.
      * @param {Function} [iteratee=_.identity] The function invoked per iteration.
      * @returns {Array|Object} Returns `collection`.
-     * @see _.forEach
      * @example
      *
      * _.forEachRight([1, 2], function(value) {
@@ -10333,7 +10255,7 @@
      */
     function endsWith(string, target, position) {
       string = toString(string);
-      target = baseToString(target);
+      target = typeof target == 'string' ? target : (target + '');
 
       var length = string.length;
       position = position === undefined
@@ -10702,7 +10624,6 @@
      * @param {Array|Function|Object|string} [predicate=_.identity]
      *  The function invoked per iteration.
      * @returns {Array} Returns the new filtered array.
-     * @see _.reject
      * @example
      *
      * var users = [
@@ -11104,7 +11025,7 @@
     }
 
     /** Used as references for various `Number` constants. */
-    var INFINITY$3 = 1 / 0;
+    var INFINITY$2 = 1 / 0;
 
     /**
      * This method is like `_.flatMap` except that it recursively flattens the
@@ -11128,7 +11049,7 @@
      * // => [1, 1, 2, 2]
      */
     function flatMapDeep(collection, iteratee) {
-      return baseFlatten(map(collection, iteratee), INFINITY$3);
+      return baseFlatten(map(collection, iteratee), INFINITY$2);
     }
 
     /**
@@ -11178,7 +11099,7 @@
     }
 
     /** Used as references for various `Number` constants. */
-    var INFINITY$4 = 1 / 0;
+    var INFINITY$3 = 1 / 0;
 
     /**
      * Recursively flattens `array`.
@@ -11196,7 +11117,7 @@
      */
     function flattenDeep(array) {
       var length = array ? array.length : 0;
-      return length ? baseFlatten(array, INFINITY$4) : [];
+      return length ? baseFlatten(array, INFINITY$3) : [];
     }
 
     /**
@@ -11362,7 +11283,6 @@
      * @category Util
      * @param {...(Function|Function[])} [funcs] Functions to invoke.
      * @returns {Function} Returns the new function.
-     * @see _.flowRight
      * @example
      *
      * function square(n) {
@@ -11380,12 +11300,11 @@
      * invokes the given functions from right to left.
      *
      * @static
-     * @since 3.0.0
+     * @since 0.1.0
      * @memberOf _
      * @category Util
      * @param {...(Function|Function[])} [funcs] Functions to invoke.
      * @returns {Function} Returns the new function.
-     * @see _.flow
      * @example
      *
      * function square(n) {
@@ -11411,7 +11330,6 @@
      * @param {Object} object The object to iterate over.
      * @param {Function} [iteratee=_.identity] The function invoked per iteration.
      * @returns {Object} Returns `object`.
-     * @see _.forInRight
      * @example
      *
      * function Foo() {
@@ -11443,7 +11361,6 @@
      * @param {Object} object The object to iterate over.
      * @param {Function} [iteratee=_.identity] The function invoked per iteration.
      * @returns {Object} Returns `object`.
-     * @see _.forIn
      * @example
      *
      * function Foo() {
@@ -11477,7 +11394,6 @@
      * @param {Object} object The object to iterate over.
      * @param {Function} [iteratee=_.identity] The function invoked per iteration.
      * @returns {Object} Returns `object`.
-     * @see _.forOwnRight
      * @example
      *
      * function Foo() {
@@ -11507,7 +11423,6 @@
      * @param {Object} object The object to iterate over.
      * @param {Function} [iteratee=_.identity] The function invoked per iteration.
      * @returns {Object} Returns `object`.
-     * @see _.forOwn
      * @example
      *
      * function Foo() {
@@ -11578,7 +11493,6 @@
      * @category Object
      * @param {Object} object The object to inspect.
      * @returns {Array} Returns the new array of property names.
-     * @see _.functionsIn
      * @example
      *
      * function Foo() {
@@ -11605,7 +11519,6 @@
      * @category Object
      * @param {Object} object The object to inspect.
      * @returns {Array} Returns the new array of property names.
-     * @see _.functions
      * @example
      *
      * function Foo() {
@@ -11661,36 +11574,6 @@
     });
 
     /**
-     * The base implementation of `_.gt` which doesn't coerce arguments to numbers.
-     *
-     * @private
-     * @param {*} value The value to compare.
-     * @param {*} other The other value to compare.
-     * @returns {boolean} Returns `true` if `value` is greater than `other`,
-     *  else `false`.
-     */
-    function baseGt(value, other) {
-      return value > other;
-    }
-
-    /**
-     * Creates a function that performs a relational operation on two values.
-     *
-     * @private
-     * @param {Function} operator The function to perform the operation.
-     * @returns {Function} Returns the new relational operation function.
-     */
-    function createRelationalOperation(operator) {
-      return function(value, other) {
-        if (!(typeof value == 'string' && typeof other == 'string')) {
-          value = toNumber(value);
-          other = toNumber(other);
-        }
-        return operator(value, other);
-      };
-    }
-
-    /**
      * Checks if `value` is greater than `other`.
      *
      * @static
@@ -11701,7 +11584,6 @@
      * @param {*} other The other value to compare.
      * @returns {boolean} Returns `true` if `value` is greater than `other`,
      *  else `false`.
-     * @see _.lt
      * @example
      *
      * _.gt(3, 1);
@@ -11713,7 +11595,9 @@
      * _.gt(1, 3);
      * // => false
      */
-    var gt = createRelationalOperation(baseGt);
+    function gt(value, other) {
+      return value > other;
+    }
 
     /**
      * Checks if `value` is greater than or equal to `other`.
@@ -11726,7 +11610,6 @@
      * @param {*} other The other value to compare.
      * @returns {boolean} Returns `true` if `value` is greater than or equal to
      *  `other`, else `false`.
-     * @see _.lte
      * @example
      *
      * _.gte(3, 1);
@@ -11738,9 +11621,9 @@
      * _.gte(1, 3);
      * // => false
      */
-    var gte = createRelationalOperation(function(value, other) {
+    function gte(value, other) {
       return value >= other;
-    });
+    }
 
     /**
      * Checks if `path` is a direct property of `object`.
@@ -11812,7 +11695,7 @@
     }
 
     /**
-     * Checks if `n` is between `start` and up to, but not including, `end`. If
+     * Checks if `n` is between `start` and up to but not including, `end`. If
      * `end` is not specified, it's set to `start` with `start` then set to `0`.
      * If `start` is greater than `end` the params are swapped to support
      * negative ranges.
@@ -11825,7 +11708,6 @@
      * @param {number} [start=0] The start of the range.
      * @param {number} end The end of the range.
      * @returns {boolean} Returns `true` if `number` is in the range, else `false`.
-     * @see _.range, _.rangeRight
      * @example
      *
      * _.inRange(3, 2, 4);
@@ -12051,7 +11933,6 @@
         var value = array[index],
             computed = iteratee ? iteratee(value) : value;
 
-        value = (comparator || value !== 0) ? value : 0;
         if (!(seen
               ? cacheHas(seen, computed)
               : includes(result, computed, comparator)
@@ -12305,7 +12186,7 @@
         object = parent(object, path);
         path = last(path);
       }
-      var func = object == null ? object : object[toKey(path)];
+      var func = object == null ? object : object[path];
       return func == null ? undefined : apply(func, object, args);
     }
 
@@ -13307,19 +13188,6 @@
     var lowerFirst = createCaseFirst('toLowerCase');
 
     /**
-     * The base implementation of `_.lt` which doesn't coerce arguments to numbers.
-     *
-     * @private
-     * @param {*} value The value to compare.
-     * @param {*} other The other value to compare.
-     * @returns {boolean} Returns `true` if `value` is less than `other`,
-     *  else `false`.
-     */
-    function baseLt(value, other) {
-      return value < other;
-    }
-
-    /**
      * Checks if `value` is less than `other`.
      *
      * @static
@@ -13330,7 +13198,6 @@
      * @param {*} other The other value to compare.
      * @returns {boolean} Returns `true` if `value` is less than `other`,
      *  else `false`.
-     * @see _.gt
      * @example
      *
      * _.lt(1, 3);
@@ -13342,7 +13209,9 @@
      * _.lt(3, 1);
      * // => false
      */
-    var lt = createRelationalOperation(baseLt);
+    function lt(value, other) {
+      return value < other;
+    }
 
     /**
      * Checks if `value` is less than or equal to `other`.
@@ -13355,7 +13224,6 @@
      * @param {*} other The other value to compare.
      * @returns {boolean} Returns `true` if `value` is less than or equal to
      *  `other`, else `false`.
-     * @see _.gte
      * @example
      *
      * _.lte(1, 3);
@@ -13367,9 +13235,9 @@
      * _.lte(3, 1);
      * // => false
      */
-    var lte = createRelationalOperation(function(value, other) {
+    function lte(value, other) {
       return value <= other;
-    });
+    }
 
     /**
      * The opposite of `_.mapValues`; this method creates an object with the
@@ -13385,7 +13253,6 @@
      * @param {Array|Function|Object|string} [iteratee=_.identity]
      *  The function invoked per iteration.
      * @returns {Object} Returns the new mapped object.
-     * @see _.mapValues
      * @example
      *
      * _.mapKeys({ 'a': 1, 'b': 2 }, function(value, key) {
@@ -13417,7 +13284,6 @@
      * @param {Array|Function|Object|string} [iteratee=_.identity]
      *  The function invoked per iteration.
      * @returns {Object} Returns the new mapped object.
-     * @see _.mapKeys
      * @example
      *
      * var users = {
@@ -13517,7 +13383,7 @@
             current = iteratee(value);
 
         if (current != null && (computed === undefined
-              ? (current === current && !isSymbol(current))
+              ? current === current
               : comparator(current, computed)
             )) {
           var computed = current,
@@ -13547,7 +13413,7 @@
      */
     function max(array) {
       return (array && array.length)
-        ? baseExtremum(array, identity$1, baseGt)
+        ? baseExtremum(array, identity$1, gt)
         : undefined;
     }
 
@@ -13577,7 +13443,7 @@
      */
     function maxBy(array, iteratee) {
       return (array && array.length)
-        ? baseExtremum(array, baseIteratee(iteratee), baseGt)
+        ? baseExtremum(array, baseIteratee(iteratee), gt)
         : undefined;
     }
 
@@ -13605,7 +13471,7 @@
     }
 
     /** Used as references for various `Number` constants. */
-    var NAN$2 = 0 / 0;
+    var NAN$1 = 0 / 0;
 
     /**
      * The base implementation of `_.mean` and `_.meanBy` without support for
@@ -13618,7 +13484,7 @@
      */
     function baseMean(array, iteratee) {
       var length = array ? array.length : 0;
-      return length ? (baseSum(array, iteratee) / length) : NAN$2;
+      return length ? (baseSum(array, iteratee) / length) : NAN$1;
     }
 
     /**
@@ -13781,7 +13647,7 @@
      */
     function min(array) {
       return (array && array.length)
-        ? baseExtremum(array, identity$1, baseLt)
+        ? baseExtremum(array, identity$1, lt)
         : undefined;
     }
 
@@ -13811,7 +13677,7 @@
      */
     function minBy(array, iteratee) {
       return (array && array.length)
-        ? baseExtremum(array, baseIteratee(iteratee), baseLt)
+        ? baseExtremum(array, baseIteratee(iteratee), lt)
         : undefined;
     }
 
@@ -14128,6 +13994,17 @@
     }
 
     /**
+     * Converts `value` to a string key if it's not a string or symbol.
+     *
+     * @private
+     * @param {*} value The value to inspect.
+     * @returns {string|symbol} Returns the key.
+     */
+    function toKey(key) {
+      return (typeof key == 'string' || isSymbol(key)) ? key : (key + '');
+    }
+
+    /**
      * The opposite of `_.pick`; this method creates an object composed of the
      * own and inherited enumerable string keyed properties of `object` that are
      * not omitted.
@@ -14259,28 +14136,22 @@
      */
     function compareAscending(value, other) {
       if (value !== other) {
-        var valIsDefined = value !== undefined,
-            valIsNull = value === null,
-            valIsReflexive = value === value,
-            valIsSymbol = isSymbol(value);
+        var valIsNull = value === null,
+            valIsUndef = value === undefined,
+            valIsReflexive = value === value;
 
-        var othIsDefined = other !== undefined,
-            othIsNull = other === null,
-            othIsReflexive = other === other,
-            othIsSymbol = isSymbol(other);
+        var othIsNull = other === null,
+            othIsUndef = other === undefined,
+            othIsReflexive = other === other;
 
-        if ((!othIsNull && !othIsSymbol && !valIsSymbol && value > other) ||
-            (valIsSymbol && othIsDefined && othIsReflexive && !othIsNull && !othIsSymbol) ||
-            (valIsNull && othIsDefined && othIsReflexive) ||
-            (!valIsDefined && othIsReflexive) ||
-            !valIsReflexive) {
+        if ((value > other && !othIsNull) || !valIsReflexive ||
+            (valIsNull && !othIsUndef && othIsReflexive) ||
+            (valIsUndef && othIsReflexive)) {
           return 1;
         }
-        if ((!valIsNull && !valIsSymbol && !othIsSymbol && value < other) ||
-            (othIsSymbol && valIsDefined && valIsReflexive && !valIsNull && !valIsSymbol) ||
-            (othIsNull && valIsDefined && valIsReflexive) ||
-            (!othIsDefined && valIsReflexive) ||
-            !othIsReflexive) {
+        if ((value < other && !valIsNull) || !othIsReflexive ||
+            (othIsNull && !valIsUndef && valIsReflexive) ||
+            (othIsUndef && valIsReflexive)) {
           return -1;
         }
       }
@@ -14639,7 +14510,7 @@
      * @returns {string} Returns the padding for `string`.
      */
     function createPadding(length, chars) {
-      chars = chars === undefined ? ' ' : baseToString(chars);
+      chars = chars === undefined ? ' ' : (chars + '');
 
       var charsLength = chars.length;
       if (charsLength < 2) {
@@ -14949,7 +14820,7 @@
      * // => { 'a': 1, 'c': 3 }
      */
     var pick = rest(function(object, props) {
-      return object == null ? {} : basePick(object, arrayMap(baseFlatten(props, 1), toKey));
+      return object == null ? {} : basePick(object, baseFlatten(props, 1));
     });
 
     /**
@@ -15240,7 +15111,7 @@
 
       while (length--) {
         var index = indexes[length];
-        if (length == lastIndex || index !== previous) {
+        if (lastIndex == length || index != previous) {
           var previous = index;
           if (isIndex(index)) {
             splice$2.call(array, index, 1);
@@ -15250,11 +15121,11 @@
                 object = parent(array, path);
 
             if (object != null) {
-              delete object[toKey(last(path))];
+              delete object[last(path)];
             }
           }
           else {
-            delete array[toKey(index)];
+            delete array[index];
           }
         }
       }
@@ -15286,15 +15157,10 @@
      * // => [10, 20]
      */
     var pullAt = rest(function(array, indexes) {
-      indexes = baseFlatten(indexes, 1);
+      indexes = arrayMap(baseFlatten(indexes, 1), String);
 
-      var length = array ? array.length : 0,
-          result = baseAt(array, indexes);
-
-      basePullAt(array, arrayMap(indexes, function(index) {
-        return isIndex(index, length) ? +index : index;
-      }).sort(compareAscending));
-
+      var result = baseAt(array, indexes);
+      basePullAt(array, indexes.sort(compareAscending));
       return result;
     });
 
@@ -15459,7 +15325,6 @@
      * @param {number} end The end of the range.
      * @param {number} [step=1] The value to increment or decrement by.
      * @returns {Array} Returns the new array of numbers.
-     * @see _.inRange, _.rangeRight
      * @example
      *
      * _.range(4);
@@ -15497,7 +15362,6 @@
      * @param {number} end The end of the range.
      * @param {number} [step=1] The value to increment or decrement by.
      * @returns {Array} Returns the new array of numbers.
-     * @see _.inRange, _.range
      * @example
      *
      * _.rangeRight(4);
@@ -15597,7 +15461,6 @@
      * @param {Function} [iteratee=_.identity] The function invoked per iteration.
      * @param {*} [accumulator] The initial value.
      * @returns {*} Returns the accumulated value.
-     * @see _.reduceRight
      * @example
      *
      * _.reduce([1, 2], function(sum, n) {
@@ -15653,7 +15516,6 @@
      * @param {Function} [iteratee=_.identity] The function invoked per iteration.
      * @param {*} [accumulator] The initial value.
      * @returns {*} Returns the accumulated value.
-     * @see _.reduce
      * @example
      *
      * var array = [[0, 1], [2, 3], [4, 5]];
@@ -15682,7 +15544,6 @@
      * @param {Array|Function|Object|string} [predicate=_.identity]
      *  The function invoked per iteration.
      * @returns {Array} Returns the new filtered array.
-     * @see _.filter
      * @example
      *
      * var users = [
@@ -15867,7 +15728,7 @@
         length = 1;
       }
       while (++index < length) {
-        var value = object == null ? undefined : object[toKey(path[index])];
+        var value = object == null ? undefined : object[path[index]];
         if (value === undefined) {
           index = length;
           value = defaultValue;
@@ -16015,7 +15876,7 @@
           nested = object;
 
       while (nested != null && ++index < length) {
-        var key = toKey(path[index]);
+        var key = path[index];
         if (isObject(nested)) {
           var newValue = value;
           if (index != lastIndex) {
@@ -16329,6 +16190,7 @@
       return baseOrderBy(collection, iteratees, []);
     });
 
+    /** Used as references for the maximum length and index of an array. */
     var MAX_ARRAY_LENGTH$4 = 4294967295;
     var MAX_ARRAY_INDEX = MAX_ARRAY_LENGTH$4 - 1;
     var nativeFloor$3 = Math.floor;
@@ -16353,26 +16215,21 @@
           high = array ? array.length : 0,
           valIsNaN = value !== value,
           valIsNull = value === null,
-          valIsSymbol = isSymbol(value),
-          valIsUndefined = value === undefined;
+          valIsUndef = value === undefined;
 
       while (low < high) {
         var mid = nativeFloor$3((low + high) / 2),
             computed = iteratee(array[mid]),
-            othIsDefined = computed !== undefined,
-            othIsNull = computed === null,
-            othIsReflexive = computed === computed,
-            othIsSymbol = isSymbol(computed);
+            isDef = computed !== undefined,
+            isReflexive = computed === computed;
 
         if (valIsNaN) {
-          var setLow = retHighest || othIsReflexive;
-        } else if (valIsUndefined) {
-          setLow = othIsReflexive && (retHighest || othIsDefined);
+          var setLow = isReflexive || retHighest;
         } else if (valIsNull) {
-          setLow = othIsReflexive && othIsDefined && (retHighest || !othIsNull);
-        } else if (valIsSymbol) {
-          setLow = othIsReflexive && othIsDefined && !othIsNull && (retHighest || !othIsSymbol);
-        } else if (othIsNull || othIsSymbol) {
+          setLow = isReflexive && isDef && (retHighest || computed != null);
+        } else if (valIsUndef) {
+          setLow = isReflexive && (retHighest || isDef);
+        } else if (computed == null) {
           setLow = false;
         } else {
           setLow = retHighest ? (computed <= value) : (computed < value);
@@ -16409,8 +16266,7 @@
           var mid = (low + high) >>> 1,
               computed = array[mid];
 
-          if (computed !== null && !isSymbol(computed) &&
-              (retHighest ? (computed <= value) : (computed < value))) {
+          if ((retHighest ? (computed <= value) : (computed < value)) && computed !== null) {
             low = mid + 1;
           } else {
             high = mid;
@@ -16577,30 +16433,44 @@
     }
 
     /**
-     * The base implementation of `_.sortedUniq` and `_.sortedUniqBy` without
-     * support for iteratee shorthands.
+     * The base implementation of `_.sortedUniqBy` without support for iteratee
+     * shorthands.
      *
      * @private
      * @param {Array} array The array to inspect.
      * @param {Function} [iteratee] The iteratee invoked per element.
      * @returns {Array} Returns the new duplicate free array.
      */
-    function baseSortedUniq(array, iteratee) {
-      var index = -1,
+    function baseSortedUniqBy(array, iteratee) {
+      var index = 0,
           length = array.length,
-          resIndex = 0,
-          result = [];
+          value = array[0],
+          computed = iteratee ? iteratee(value) : value,
+          seen = computed,
+          resIndex = 1,
+          result = [value];
 
       while (++index < length) {
-        var value = array[index],
-            computed = iteratee ? iteratee(value) : value;
+        value = array[index],
+        computed = iteratee ? iteratee(value) : value;
 
-        if (!index || !eq(computed, seen)) {
-          var seen = computed;
-          result[resIndex++] = value === 0 ? 0 : value;
+        if (!eq(computed, seen)) {
+          seen = computed;
+          result[resIndex++] = value;
         }
       }
       return result;
+    }
+
+    /**
+     * The base implementation of `_.sortedUniq`.
+     *
+     * @private
+     * @param {Array} array The array to inspect.
+     * @returns {Array} Returns the new duplicate free array.
+     */
+    function baseSortedUniq(array) {
+      return baseSortedUniqBy(array);
     }
 
     /**
@@ -16642,7 +16512,7 @@
      */
     function sortedUniqBy(array, iteratee) {
       return (array && array.length)
-        ? baseSortedUniq(array, baseIteratee(iteratee))
+        ? baseSortedUniqBy(array, baseIteratee(iteratee))
         : [];
     }
 
@@ -16687,7 +16557,7 @@
             typeof separator == 'string' ||
             (separator != null && !isRegExp(separator))
           )) {
-        separator = baseToString(separator);
+        separator += '';
         if (separator == '' && reHasComplexSymbol.test(string)) {
           return castSlice(stringToArray(string), 0, limit);
         }
@@ -16802,7 +16672,7 @@
     function startsWith(string, target, position) {
       string = toString(string);
       position = baseClamp(toInteger(position), 0, string.length);
-      return string.lastIndexOf(baseToString(target), position) == position;
+      return string.lastIndexOf(target, position) == position;
     }
 
     /**
@@ -17805,10 +17675,13 @@
      */
     function trim(string, chars, guard) {
       string = toString(string);
-      if (string && (guard || chars === undefined)) {
+      if (!string) {
+        return string;
+      }
+      if (guard || chars === undefined) {
         return string.replace(reTrim$2, '');
       }
-      if (!string || !(chars = baseToString(chars))) {
+      if (!(chars += '')) {
         return string;
       }
       var strSymbols = stringToArray(string),
@@ -17843,10 +17716,13 @@
      */
     function trimEnd(string, chars, guard) {
       string = toString(string);
-      if (string && (guard || chars === undefined)) {
+      if (!string) {
+        return string;
+      }
+      if (guard || chars === undefined) {
         return string.replace(reTrimEnd, '');
       }
-      if (!string || !(chars = baseToString(chars))) {
+      if (!(chars += '')) {
         return string;
       }
       var strSymbols = stringToArray(string),
@@ -17879,10 +17755,13 @@
      */
     function trimStart(string, chars, guard) {
       string = toString(string);
-      if (string && (guard || chars === undefined)) {
+      if (!string) {
+        return string;
+      }
+      if (guard || chars === undefined) {
         return string.replace(reTrimStart, '');
       }
-      if (!string || !(chars = baseToString(chars))) {
+      if (!(chars += '')) {
         return string;
       }
       var strSymbols = stringToArray(string),
@@ -17940,7 +17819,7 @@
       if (isObject(options)) {
         var separator = 'separator' in options ? options.separator : separator;
         length = 'length' in options ? toInteger(options.length) : length;
-        omission = 'omission' in options ? baseToString(options.omission) : omission;
+        omission = 'omission' in options ? toString(options.omission) : omission;
       }
       string = toString(string);
 
@@ -17980,7 +17859,7 @@
           }
           result = result.slice(0, newEnd === undefined ? end : newEnd);
         }
-      } else if (string.indexOf(baseToString(separator), end) != end) {
+      } else if (string.indexOf(separator, end) != end) {
         var index = result.lastIndexOf(separator);
         if (index > -1) {
           result = result.slice(0, index);
@@ -18057,9 +17936,6 @@
         : string;
     }
 
-    /** Used as references for various `Number` constants. */
-    var INFINITY$5 = 1 / 0;
-
     /**
      * Creates a set of `values`.
      *
@@ -18067,7 +17943,7 @@
      * @param {Array} values The values to add to the set.
      * @returns {Object} Returns the new set.
      */
-    var createSet = !(Set && (1 / setToArray(new Set([,-0]))[1]) == INFINITY$5) ? noop$1 : function(values) {
+    var createSet = !(Set && new Set([1, 2]).size === 2) ? noop$1 : function(values) {
       return new Set(values);
     };
 
@@ -18112,7 +17988,6 @@
         var value = array[index],
             computed = iteratee ? iteratee(value) : value;
 
-        value = (comparator || value !== 0) ? value : 0;
         if (isCommon && computed === computed) {
           var seenIndex = seen.length;
           while (seenIndex--) {
@@ -18326,9 +18201,8 @@
     function baseUnset(object, path) {
       path = isKey(path, object) ? [path] : castPath(path);
       object = parent(object, path);
-
-      var key = toKey(last(path));
-      return !(object != null && baseHas(object, key)) || delete object[key];
+      var key = last(path);
+      return (object != null && has(object, key)) ? delete object[key] : true;
     }
 
     /**
@@ -18583,7 +18457,6 @@
      * @param {Array} array The array to filter.
      * @param {...*} [values] The values to exclude.
      * @returns {Array} Returns the new array of filtered values.
-     * @see _.difference, _.xor
      * @example
      *
      * _.without([1, 2, 1, 3], 1, 2);
@@ -18772,7 +18645,6 @@
      * @category Array
      * @param {...Array} [arrays] The arrays to inspect.
      * @returns {Array} Returns the new array of values.
-     * @see _.difference, _.without
      * @example
      *
      * _.xor([2, 1], [4, 2]);
@@ -19184,7 +19056,7 @@
     }
 
     /** Used as the semantic version number. */
-    var VERSION = '4.11.2';
+    var VERSION = '4.11.1';
 
     /** Used to compose bitmasks for wrapper metadata. */
     var BIND_KEY_FLAG$5 = 2;
@@ -22454,9 +22326,11 @@
         var data = this.data();
         var x = this.x();
         x.range([0, this.width()]);
+        x.fit(data);
 
         var y = this.y();
         y.range([this.height(), 0]);
+        y.fit(data);
 
         var line$$ = line()
             .x(x.m())

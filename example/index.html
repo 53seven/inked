@@ -37,39 +37,10 @@ body {
 <script type="" src="https://cdn.rawgit.com/53seven/d3-svg/master/build/d3-svg.min.js"></script>
 <script src="../build/537-base-chart.js"></script>
 <script>
-/*var TimeSeries = $537.TimeSeries;
-
-// create an svg
-d3_request.json('./sample.json', function(err, raw) {
-  if (err) {
-    throw err;
-  }
-  var data = raw.req.buckets.map((d) => {
-    d.key = new Date(d.key);
-    return d;
-  });
-  var ts = new TimeSeries({
-    width: 700,
-    height: 400
-  });
-  ts
-    .margin({top: 20, right: 30, bottom: 20, left: 40})
-    .xVal('key')
-    .yVal('doc_count')
-    .data(data)
-    .render();
-
-  setTimeout(function() {
-    data.push({
-      key: new Date('2016-03-01'),
-      doc_count: 500
-    });
-    ts.update();
-  }, 1000);
-
-});*/
+/* global $537, _ */
 
 var Formula = $537.Formula;
+var Measure = $537.Measure;
 
 var income = 160000;
 var col = 130000;
@@ -79,42 +50,49 @@ var capital = income - col;
 var option_val = 0.01 * 0.5;
 var tax_rate = 0.4;
 
-var liability = new Formula({
+var liability = new Measure({
   val: function(x) {
     return x * option_val * tax_rate;
-  },
-  domain: [1000000000, 5000000000],
-  sample: 1000
+  }
 });
 
-var years_til_own = new Formula({
+var years_til_own = new Measure({
   val: function(x) {
-    return liability.eval(x) / capital;
-  },
-  domain: [1000000000, 5000000000],
-  sample: 1000
+    return liability.val()(x) / capital;
+  }
 });
 
-var LineChart = $537.LineChart;
-var lc = new LineChart({
-  width: 700,
-  height: 400,
-  x: liability.input(),
-  y: liability.output(),
-  data: liability.data()
-})
-.margin({top: 20, right: 30, bottom: 20, left: 80})
-.render();
+var data = [];
+var diff = 4000000000 / 1000;
+for (var i = 1000000000; i < 5000000000; i += diff) {
+  data.push(i);
+}
 
 var LineChart = $537.LineChart;
 var lc = new LineChart({
   width: 700,
   height: 400,
-  x: years_til_own.input(),
-  y: years_til_own.output(),
-  data: years_til_own.data()
+  y: liability,
+  data: data
 })
 .margin({top: 20, right: 30, bottom: 20, left: 80})
 .render();
+
+var lc1 = new LineChart({
+  width: 700,
+  height: 400,
+  y: years_til_own,
+  data: data
+})
+.margin({top: 20, right: 30, bottom: 20, left: 80})
+.render();
+
+setTimeout(function() {
+  console.log('update');
+  col += 1000;
+  capital = income - col;
+  lc.update();
+  lc1.update();
+}, 1000);
 
 </script>
