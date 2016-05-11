@@ -1,30 +1,30 @@
 {
-  "name": "537-base-chart",
+  "name": "nought",
   "version": "0.0.0",
-  "description": "d3 line chart plugin",
+  "description": "extendable and reusable d3 charts in ES6 classes",
   "keywords": [
     "d3",
     "plugin",
     "line chart"
   ],
   "license": "MIT",
-  "main": "build/537-base-chart.js",
+  "main": "build/nought.js",
   "jsnext:main": "index.js",
-  "homepage": "https://github.com/53seven/537-base-chart",
+  "homepage": "https://github.com/53seven/nought",
   "repository": {
     "type": "git",
-    "url": "https://github.com/53seven/537-base-chart.git"
+    "url": "https://github.com/53seven/nought.git"
   },
   "watch": {
     "build": "{index,src/}*.js"
   },
   "scripts": {
-    "build": "mkdir -p build && rollup -c rollup.config.js -o build/537-base-chart.js",
-    "minify": "uglifyjs build/537-base-chart.js -c -m -o build/537-base-chart.min.js",
-    "archive": "rm -f build/537-base-chart.zip && zip -j build/537-base-chart.zip -- LICENSE README.md build/537-base-chart.js build/537-base-chart.min.js",
+    "build": "mkdir -p build && rollup -c rollup.config.js -o build/nought.js",
+    "minify": "uglifyjs build/nought.js -c -m -o build/nought.min.js",
+    "archive": "rm -f build/nought.zip && zip -j build/nought.zip -- LICENSE README.md build/nought.js build/nought.min.js",
     "pretest": "npm run build",
     "test": "faucet `find test -name '*-test.js'`",
-    "version": "npm run build && npm run minify && git add build/537-base-chart.js build/537-base-chart.min.js",
+    "version": "npm run build && npm run minify && git add build/nought.js build/nought.min.js",
     "prepublish": "npm run test && npm run minify && npm run archive",
     "watch": "npm-watch"
   },

@@ -23,7 +23,7 @@ class ScatterChart extends Bivariate {
 
     var circles = this.g().selectAll('circle.point').data(data);
 
-    circles.enter()
+    /*circles.enter()
         .append('circle').attr('class', 'point')
         .attr('r', this.r())
         .attr('fill', this.fill())
@@ -35,12 +35,19 @@ class ScatterChart extends Bivariate {
         .attr('r', this.r())
         .attr('fill', this.fill())
         .attr('cx', x.m())
-        .attr('cy', y.m());
+        .attr('cy', y.m());*/
+    circles.enter()
+        .append('rect').attr('class', 'point')
+        .attr('width', this.r())
+        .attr('height', this.r())
+        .attr('fill', this.fill())
+        .attr('x', x.m())
+        .attr('y', y.m());
   }
 
   decorate() {
-    this._axes.plotLeft(this.y());
-    this._axes.plotBottom(this.x());
+    //this._axes.plotLeft(this.y());
+    //this._axes.plotBottom(this.x());
   }
 
   r(val)  {
