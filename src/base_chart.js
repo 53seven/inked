@@ -3,7 +3,7 @@ import * as d3_selection from 'd3-selection';
 import * as d3_trans from 'd3-transition';
 
 // we need this to stop rollup from tree shaking...
-var t = d3_trans.transition().duration(500);
+//var t = d3_trans.transition().duration(500);
 
 class BaseChart {
 
