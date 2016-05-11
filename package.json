@@ -20,7 +20,7 @@
   },
   "scripts": {
     "build": "mkdir -p build && rollup -c rollup.config.js -o build/nought.js",
-    "minify": "uglifyjs build/nought.js -c -m -o build/nought.min.js",
+    "minify": "return 0;#uglifyjs build/nought.js -c -m -o build/nought.min.js",
     "archive": "rm -f build/nought.zip && zip -j build/nought.zip -- LICENSE README.md build/nought.js build/nought.min.js",
     "pretest": "npm run build",
     "test": "faucet `find test -name '*-test.js'`",
