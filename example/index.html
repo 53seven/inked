@@ -35,12 +35,12 @@ body {
 <script src="https://d3js.org/d3-time-format.v0.3.min.js"></script>
 
 <script type="" src="https://cdn.rawgit.com/53seven/d3-svg/master/build/d3-svg.min.js"></script>
-<script src="../build/537-base-chart.js"></script>
+<script src="../build/inked.js"></script>
 <script>
-/* global $537, _ */
+/* global inked, _ */
 
-var Formula = $537.Formula;
-var Measure = $537.Measure;
+var Formula = inked.Formula;
+var Measure = inked.Measure;
 
 var income = 160000;
 var col = 130000;
@@ -68,7 +68,7 @@ for (var i = 1000000000; i < 5000000000; i += diff) {
   data.push(i);
 }
 
-var LineChart = $537.LineChart;
+var LineChart = inked.LineChart;
 var lc = new LineChart({
   width: 700,
   height: 400,

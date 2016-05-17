@@ -1,5 +1,5 @@
 {
-  "name": "nought",
+  "name": "inked",
   "version": "0.0.0",
   "description": "extendable and reusable d3 charts in ES6 classes",
   "keywords": [
@@ -8,23 +8,23 @@
     "line chart"
   ],
   "license": "MIT",
-  "main": "build/nought.js",
+  "main": "build/inked.js",
   "jsnext:main": "index.js",
-  "homepage": "https://github.com/53seven/nought",
+  "homepage": "https://github.com/53seven/inked",
   "repository": {
     "type": "git",
-    "url": "https://github.com/53seven/nought.git"
+    "url": "https://github.com/53seven/inked.git"
   },
   "watch": {
     "build": "{index,src/}*.js"
   },
   "scripts": {
-    "build": "mkdir -p build && rollup -c rollup.config.js -o build/nought.js",
-    "minify": "return 0;#uglifyjs build/nought.js -c -m -o build/nought.min.js",
-    "archive": "rm -f build/nought.zip && zip -j build/nought.zip -- LICENSE README.md build/nought.js build/nought.min.js",
+    "build": "mkdir -p build && rollup -c rollup.config.js -o build/inked.js",
+    "minify": "return 0;#uglifyjs build/inked.js -c -m -o build/inked.min.js",
+    "archive": "rm -f build/inked.zip && zip -j build/inked.zip -- LICENSE README.md build/inked.js build/inked.min.js",
     "pretest": "npm run build",
     "test": "faucet `find test -name '*-test.js'`",
-    "version": "npm run build && npm run minify && git add build/nought.js build/nought.min.js",
+    "version": "npm run build && npm run minify && git add build/inked.js build/inked.min.js",
     "prepublish": "npm run test && npm run minify && npm run archive",
     "watch": "npm-watch"
   },
