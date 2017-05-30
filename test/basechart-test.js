@@ -6,8 +6,8 @@ var tape = require('tape-catch'),
 tape('line chart is callable on a svg element', function(test) {
   var BaseChart = charts.BaseChart;
 
-  var document = jsdom.jsdom();
-  global.document = document;
+  var dom = new jsdom.JSDOM();
+  global.document = dom.window.document;
 
   var chart = new BaseChart();
 
