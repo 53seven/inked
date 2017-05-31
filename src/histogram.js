@@ -23,6 +23,7 @@ class Histogram extends Bivariate {
     var y = this.y().range([this.height(), 0]);
 
     x.domain(data.map(x.val()));
+    y.domain(data.map(y.val()));
 
     this.g().selectAll('.bar')
         .data(data)
