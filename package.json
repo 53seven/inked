@@ -1,6 +1,6 @@
 {
   "name": "inked",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "extendable and reusable d3 charts in ES6 classes",
   "keywords": [
     "d3",
@@ -20,8 +20,8 @@
   },
   "scripts": {
     "build": "mkdir -p build && rollup -c rollup.config.js -o build/inked.js",
-    "minify": "uglifyjs build/inked.js -c -m -o build/inked.min.js",
-    "archive": "rm -f build/inked.zip && zip -j build/inked.zip -- LICENSE README.md build/inked.js build/inked.min.js",
+    "minify": "#uglifyjs build/inked.js -c -m -o build/inked.min.js",
+    "archive": "rm -f build/inked.zip && zip -j build/inked.zip -- LICENSE README.md build/inked.js",
     "pretest": "npm run build",
     "test": "#faucet `find test -name '*-test.js'`",
     "version": "npm run build && npm run minify && git add build/inked.js build/inked.min.js",
