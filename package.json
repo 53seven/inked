@@ -1,6 +1,6 @@
 {
   "name": "inked",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "extendable and reusable d3 charts in ES6 classes",
   "keywords": [
     "d3",
