@@ -1,6 +1,7 @@
 // base_chart.js
 import * as d3_selection from 'd3-selection';
 import * as d3_trans from 'd3-transition';
+import * as d3 from 'd3';
 
 // we need this to stop rollup from tree shaking...
 var t = d3_trans.transition().duration(500);
@@ -126,9 +127,25 @@ class BaseChart {
   }
 
   update() {
+    if (!this._g) {
+      return this.render();
+    }
     this.plot();
     this.decorate();
     return this;
+  }
+
+  onmousemove(fn) {
+    var self = this;
+    this.root().on('mousemove', function(d, i) {
+      var mouse = d3.mouse(this);
+      var margin = self.margin();
+      var coords = {
+        x: Math.max(mouse[0] - margin.left, 0),
+        y: Math.max(mouse[1] - margin.top, 0)
+      };
+      fn.call(self, coords);
+    });
   }
 
   // utility function to hide the kludge

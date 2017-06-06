@@ -1,7 +1,7 @@
 // line_chart.js
 import {default as Bivariate} from './bivariate';
 import {default as Axes} from './axes';
-import * as d3_shape from 'd3-shape';
+import {default as pathTween} from './util/pathTween';
 import * as d3 from 'd3';
 import * as _ from 'lodash-es';
 
@@ -48,14 +48,28 @@ class LineChart extends Bivariate {
         .attr('class', 'line')
         .style('stroke', this.stroke());
 
+
     path.transition()
-        .duration(500)
-        .attr('d', line);
+        .duration(1000)
+        .attr('d', line)
+        .attrTween('d', pathTween(line, 25));
 
     var labels;
     if (this._label) {
-      labels = this.g().selectAll('text.labels').data(data);
-      labels.enter().append('text')
+      labels = this.g().selectAll('text.labels').data(data, (d, i) => { return i; });
+
+      labels.exit().remove();
+      labels.enter()
+          .append('text')
+          .attr('class', 'labels')
+          .attr('x', (d, i) => {
+            return x.m()(_.last(d));
+          })
+          .attr('y', (d, i) => {
+            return y.m()(_.last(d));
+          })
+        .merge(labels)
+          .transition()
           .attr('x', (d, i) => {
             return x.m()(_.last(d));
           })
@@ -64,14 +78,77 @@ class LineChart extends Bivariate {
           })
           .attr('dx', '0.5em')
           .text(this._label);
+
     }
+
+    this.onmousemove((coords) => {
+      var hoverX = this.x().scale().invert(coords.x);
+      var bLeft = d3.bisector(this.xVal()).left;
+      var bRight = d3.bisector(this.xVal()).right;
+      // get the dots we want to draw
+      var hoveredDots = data.map((d) => {
+        var iLeft = bLeft(d, hoverX, 1),
+          iRight = bRight(d, hoverX, 1),
+          d0 = d[iLeft - 1],
+          d1 = d[iRight],
+          point = hoverX - x.eval(d0) > x.eval(d1) - hoverX ? d1 : d0;
+        return point;
+      });
+
+      var dots = this.g().selectAll('circle.point').data(hoveredDots);
+      dots.exit().remove();
+      dots.enter().append('circle')
+          .attr('class', 'point')
+          .attr('r', 5)
+        .merge(dots)
+          .attr('cx', x.m())
+          .attr('cy', y.m())
+          .attr('fill', this.stroke());
+
+      // now draw the trace line
+      var trace = this.g().selectAll('line.trace').data([{x: hoverX}]);
+      trace.enter()
+          .append('line').attr('class', 'trace')
+        .merge(trace)
+          .attr('x1', (d) => {
+            return x.scale()(d.x);
+          })
+          .attr('x2', (d) => {
+            return x.scale()(d.x);
+          })
+          .attr('y1', 0)
+          .attr('y2', this.height());
+
+      // finally draw annotation box
+      var annotationText = this.g().selectAll('text.annotation').data(hoveredDots);
+      annotationText.exit().remove();
+      annotationText.enter().append('text')
+          .attr('class', 'annotation')
+        .merge(annotationText)
+          .attr('x', (d) => {
+            return x.scale()(hoverX);
+          })
+          .attr('dx', '5px')
+          .attr('y', 0)
+          .attr('dy', (d, i) => {
+            return `${i}em`;
+          })
+          .text((d, i) => {
+            if (this._label) {
+              return [this._label(d, i), y.val()(d, i)].join(' - ');
+            } else {
+              return y.val()(d, i);
+            }
+
+          });
+    });
   }
 
   label(val) {
     if (!val) {
       return this._label;
     }
-    this._label = val;
+    this._label = typeof val === 'string' ? function(d) { return _.at(d, val)[0]; } : val;
     return this;
   }
 

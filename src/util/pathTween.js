@@ -12,6 +12,7 @@ function pathTween(new_path, precision) {
           n1 = (path1.setAttribute('d', new_path(data)), path1).getTotalLength();
 
       // Uniform sampling of distance based on specified precision.
+      // todo: change from uniform sampling to one that biases parts of path with high rate of change
       var distances = [0], i = 0, dt = precision / Math.max(n0, n1);
       while ((i += dt) < 1) {
         distances.push(i);
