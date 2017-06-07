@@ -11,18 +11,6 @@ class TimeSeries extends LineChart {
     this.x().scale(d3_scale.scaleTime());
   }
 
-  plot() {
-    var data = this.data();
-    this.x().range([0, this.width()]);
-    this.y().range([this.height(), 0]);
-    // figure out the domains for our data (if they have not been set)
-
-    this.x().fit(data);
-    this.y().fit(data);
-
-    // draw our line
-    super.plot();
-  }
 }
 
 export default TimeSeries;
