@@ -141,10 +141,17 @@ class BaseChart {
       var mouse = d3.mouse(this);
       var margin = self.margin();
       var coords = {
-        x: Math.max(mouse[0] - margin.left, 0),
-        y: Math.max(mouse[1] - margin.top, 0)
+        x: Math.min(Math.max(mouse[0] - margin.left, 0), self.width()),
+        y: Math.min(Math.max(mouse[1] - margin.top, 0), self.width())
       };
       fn.call(self, coords);
+    });
+  }
+
+  onmouseout(fn) {
+    var self = this;
+    this.root().on('mouseout', function(d, i) {
+      fn.call(self);
     });
   }
 
