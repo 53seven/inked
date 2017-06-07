@@ -7763,10 +7763,17 @@ class BaseChart {
       var mouse$$1 = mouse(this);
       var margin = self.margin();
       var coords = {
-        x: Math.max(mouse$$1[0] - margin.left, 0),
-        y: Math.max(mouse$$1[1] - margin.top, 0)
+        x: Math.min(Math.max(mouse$$1[0] - margin.left, 0), self.width()),
+        y: Math.min(Math.max(mouse$$1[1] - margin.top, 0), self.width())
       };
       fn.call(self, coords);
+    });
+  }
+
+  onmouseout(fn) {
+    var self = this;
+    this.root().on('mouseout', function(d, i) {
+      fn.call(self);
     });
   }
 
@@ -25951,21 +25958,24 @@ class LineChart extends Bivariate {
 
     }
 
+    var annotationContainer = this.g()
+        .append('g')
+        .style('pointer-events', 'none')
+        .classed('annotationContainer', true);
+
     this.onmousemove((coords) => {
       var hoverX = this.x().scale().invert(coords.x);
-      var bLeft = bisector(this.xVal()).left;
-      var bRight = bisector(this.xVal()).right;
+      var bisect$$1 = bisector(this.xVal()).right;
       // get the dots we want to draw
       var hoveredDots = data.map((d) => {
-        var iLeft = bLeft(d, hoverX, 1),
-          iRight = bRight(d, hoverX, 1),
-          d0 = d[iLeft - 1],
-          d1 = d[iRight],
-          point = hoverX - x.eval(d0) > x.eval(d1) - hoverX ? d1 : d0;
+        var index = bisect$$1(d, hoverX, 1),
+          d0 = d[index - 1],
+          d1 = d[index],
+          point = hoverX - x.val()(d1) > x.val()(d0) - hoverX ? d1 : d0;
         return point;
       });
 
-      var dots = this.g().selectAll('circle.point').data(hoveredDots);
+      var dots = annotationContainer.selectAll('circle.point').data(hoveredDots);
       dots.exit().remove();
       dots.enter().append('circle')
           .attr('class', 'point')
@@ -25976,9 +25986,10 @@ class LineChart extends Bivariate {
           .attr('fill', this.stroke());
 
       // now draw the trace line
-      var trace = this.g().selectAll('line.trace').data([{x: hoverX}]);
+      var trace = annotationContainer.selectAll('line.trace').data([{x: hoverX}]);
       trace.enter()
           .append('line').attr('class', 'trace')
+          .style('pointer-events', 'none')
         .merge(trace)
           .attr('x1', (d) => {
             return x.scale()(d.x);
@@ -25990,7 +26001,7 @@ class LineChart extends Bivariate {
           .attr('y2', this.height());
 
       // finally draw annotation box
-      var annotationText = this.g().selectAll('text.annotation').data(hoveredDots);
+      var annotationText = annotationContainer.selectAll('text.annotation').data(hoveredDots);
       annotationText.exit().remove();
       annotationText.enter().append('text')
           .attr('class', 'annotation')
@@ -26011,6 +26022,10 @@ class LineChart extends Bivariate {
             }
 
           });
+    });
+
+    this.onmouseout(() => {
+      annotationContainer.selectAll('*').remove();
     });
   }
 
