@@ -26062,18 +26062,6 @@ class TimeSeries extends LineChart {
     this.x().scale(time());
   }
 
-  plot() {
-    var data = this.data();
-    this.x().range([0, this.width()]);
-    this.y().range([this.height(), 0]);
-    // figure out the domains for our data (if they have not been set)
-
-    this.x().fit(data);
-    this.y().fit(data);
-
-    // draw our line
-    super.plot();
-  }
 }
 
 // histogram.js
