@@ -16,6 +16,7 @@ class LineChart extends Bivariate {
   }
 
   plot() {
+    var self = this;
     var data = this.data();
 
     // check to see if there are multiple series of data
@@ -54,37 +55,35 @@ class LineChart extends Bivariate {
         .attr('d', line)
         .attrTween('d', pathTween(line, 25));
 
-    var labels;
     if (this._label) {
-      labels = this.g().selectAll('text.labels').data(data, (d, i) => { return i; });
+      var labelContainer = this.one('g.labelContainer');
+      var labelsG = labelContainer.selectAll('g.label').data(data, (d, i) => { return i; });
 
-      labels.exit().remove();
-      labels.enter()
-          .append('text')
-          .attr('class', 'labels')
-          .attr('x', (d, i) => {
-            return x.m()(_.last(d));
-          })
-          .attr('y', (d, i) => {
-            return y.m()(_.last(d));
-          })
-        .merge(labels)
-          .transition()
-          .attr('x', (d, i) => {
-            return x.m()(_.last(d));
-          })
-          .attr('y', (d, i) => {
-            return y.m()(_.last(d));
-          })
-          .attr('dx', '0.5em')
-          .text(this._label);
+      var newLabels = labelsG.enter().append('g')
+        .classed('label', true)
+        .attr('transform', (d, i) => {
+          return `translate(0, ${i*15})`;
+        });
 
+      var circles = newLabels.append('circle').attr('r', '0.5em');
+      var labels = newLabels.append('text').text(this._label);
+
+      circles
+        .attr('cx', '0.25em')
+        .attr('cy', '0.25em')
+        .style('fill', this.stroke());
+
+      labels
+        .attr('x', '0.9em')
+        .attr('dy', '0.5em');
+
+      labelContainer.attr('transform', function(d, i, nodes, n) {
+        return self.position(this, 'NE', 'NE');
+      });
     }
 
-    var annotationContainer = this.g()
-        .append('g')
-        .style('pointer-events', 'none')
-        .classed('annotationContainer', true);
+    var annotationContainer = this.one('g.annotationContainer')
+      .style('pointer-events', 'none');
 
     this.onmousemove((coords) => {
       var hoverX = this.x().scale().invert(coords.x);
@@ -124,16 +123,13 @@ class LineChart extends Bivariate {
           .attr('y2', this.height());
 
       // finally draw annotation box
-      var annotationText = annotationContainer.selectAll('text.annotation').data(hoveredDots);
+      var textContainer = this.one('g.textContainer', annotationContainer);
+      var annotationText = textContainer.selectAll('text.annotation').data(hoveredDots);
       annotationText.exit().remove();
       annotationText.enter().append('text')
           .attr('class', 'annotation')
         .merge(annotationText)
-          .attr('x', (d) => {
-            return x.scale()(hoverX);
-          })
-          .attr('dx', '5px')
-          .attr('y', 0)
+          .attr('dx', '15px')
           .attr('dy', (d, i) => {
             return `${i}em`;
           })
@@ -145,6 +141,16 @@ class LineChart extends Bivariate {
             }
 
           });
+
+      textContainer.attr('transform', function(d) {
+        var box = this.getBBox();
+        var size = self.size();
+        var transx = x.scale()(hoverX);
+        if (transx + box.width > size.width) {
+          transx -= (box.width + 30);
+        }
+        return `translate(${transx}, ${coords.y})`;
+      });
     });
 
     this.onmouseout(() => {

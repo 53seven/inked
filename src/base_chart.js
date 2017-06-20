@@ -135,6 +135,23 @@ class BaseChart {
     return this;
   }
 
+  position(node, childCell, parentCell) {
+    var childBB = node.getBBox();
+    var parentBB = this.size();
+    var x = parentBB.width - childBB.width;
+    return `translate(${x}, 0)`;
+  }
+
+  one(selector, parent) {
+    var elData = selector.split(/\./g);
+    // creates just one element with no data
+    var elem = (parent || this.g()).selectAll(selector).data([null]);
+    return elem.enter()
+      .append(elData.shift())
+      .classed(elData.join(' '), true)
+      .merge(elem);
+  }
+
   onmousemove(fn) {
     var self = this;
     this.root().on('mousemove', function(d, i) {
