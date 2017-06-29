@@ -1,0 +1,14 @@
+{
+    "parserOptions": {
+        "ecmaVersion": 6,
+        "sourceType": "script"
+    },
+    "env": {
+        "mocha": true,
+        "amd": true,
+        "browser": true
+    },
+    "globals": {
+        "global": true
+    }
+}

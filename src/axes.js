@@ -48,7 +48,7 @@ class Axes {
     var axis = d3_axis.axisBottom().scale(measure.scale());
     this._bottom_axis = this._parent.g().append('g')
         .attr('class', 'bottom axis')
-        .attr('transform', 'translate(0,' + this._parent.height() + ')')
+        .attr('transform', 'translate(0,' + this._parent.innerHeight() + ')')
         .call(axis);
   }
 

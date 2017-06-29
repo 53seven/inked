@@ -6,3 +6,4 @@ export {default as GroupedHistogram} from './src/grouped_histogram';
 export {default as ScatterChart} from './src/scatter';
 export {default as Measure} from './src/measure';
 export {default as Bivariate} from './src/bivariate';
+export {default as MutableProp} from './src/mutableprop';

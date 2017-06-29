@@ -15,20 +15,19 @@
     "type": "git",
     "url": "https://github.com/53seven/inked.git"
   },
-  "watch": {
-    "build": "{index,src/}*.js"
-  },
   "scripts": {
+    "lint": "./node_modules/./.bin/eslint index.js lib/ test/",
     "build": "mkdir -p build && rollup -c rollup.config.js -o build/inked.js",
     "minify": "#uglifyjs build/inked.js -c -m -o build/inked.min.js",
     "archive": "rm -f build/inked.zip && zip -j build/inked.zip -- LICENSE README.md build/inked.js",
     "pretest": "npm run build",
-    "test": "#faucet `find test -name '*-test.js'`",
+    "test": "./node_modules/.bin/istanbul cover node_modules/.bin/_mocha -- --recursive test",
     "version": "npm run build && npm run minify && git add build/inked.js",
     "prepublish": "npm run test && npm run minify && npm run archive",
     "watch": "npm-watch"
   },
   "devDependencies": {
+    "eslint": "^3.15.0",
     "d3-svg": "^0.2.0",
     "faucet": "0.0",
     "jsdom": "^11.0.0",
@@ -38,7 +37,9 @@
     "rollup-plugin-node-resolve": "^3.0.0",
     "tape": "4",
     "tape-catch": "^1.0.4",
-    "uglify-js": "3"
+    "uglify-js": "3",
+    "istanbul": "^0.4.5",
+    "mocha": "^3.2.0"
   },
   "dependencies": {
     "d3": "^4.0.0-alpha.40",

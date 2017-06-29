@@ -1,5 +1,4 @@
 // barchart-test.js
-console.log('test')
 var tape = require('tape-catch'),
     jsdom = require('jsdom');
     //charts = require('../');

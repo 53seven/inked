@@ -2,116 +2,73 @@
 import * as d3_selection from 'd3-selection';
 import * as d3_trans from 'd3-transition';
 import * as d3 from 'd3';
+import {default as MutableProp} from './MutableProp';
 
 // we need this to stop rollup from tree shaking...
 var t = d3_trans.transition().duration(500);
 
-class BaseChart {
+class BaseChart extends MutableProp {
 
   constructor(opts) {
-    opts = opts || {};
-    this._width = opts.width || 0;
-    this._height = opts.height || 0;
-    this._margin = opts.margin || {top: 0, left:0, bottom: 0, right: 0};
-    this._el = opts.el || 'body';
-    this._root = opts.root || null;
-    this._data = opts.data || null;
-    this._title = opts.title || null;
-  }
-
-  outerWidth(val) {
-    if (!val) {
-      return this._width;
-    }
-    this._width = val;
-    return this;
-  }
-
-  outerHeight(val) {
-    if (!val) {
-      return this._height;
-    }
-    this._height = val;
-    return this;
+    super(opts);
+    this.extend(['width', 'height', 'aspect', 'fit', 'margin', 'el', 'root', 'data', 'title', 'g'], opts);
   }
 
   outerSize() {
-    return {
-      width: this.outerWidth(),
-      height: this.outerHeight()
-    };
-  }
-
-  width() {
-    return this._width - this._margin.left - this._margin.right;
-  }
-
-  height() {
-    return this._height - this._margin.top - this._margin.bottom;
-  }
-
-  size() {
     return {
       width: this.width(),
       height: this.height()
     };
   }
 
-  margin(val) {
-    if (!val) {
-      return this._margin;
-    }
-    this._margin.top = val.top;
-    this._margin.bottom = val.bottom;
-    this._margin.left = val.left;
-    this._margin.right = val.right;
-    return this;
+  innerWidth() {
+    return this.width() - this.margin().left - this.margin().right;
   }
 
-  g() {
-    return this._g;
+  innerHeight() {
+    return this.height() - this.margin().top - this.margin().bottom;
   }
 
-  root() {
-    return this._root;
-  }
-
-  title(val) {
-    if (!val) {
-      return this._title;
-    }
-    this._title = val;
-    return this;
-  }
-
-  data(val) {
-    if (!val) {
-      return this._data;
-    }
-    this._data = val;
-    return this;
+  size() {
+    return {
+      width: this.innerWidth(),
+      height: this.innerHeight()
+    };
   }
 
   render() {
     // base chart only needs to do one thing
     // and that is create the g element correctly
     // NOTE: no arrow function since we want the `this` (sigh)
-    if (!this._root) {
-      this._root = d3_selection.select(this._el)
-                        .append('svg')
-                        .attr('width', this.outerWidth())
-                        .attr('height', this.outerHeight());
+    let rootEl;
+    if (!this.root()) {
+      rootEl = d3_selection.select(this.el()).append('svg');
     } else {
-      this._root = d3_selection.select(this._root);
+      rootEl = d3_selection.select(this.root());
     }
 
+    var rootNode = rootEl.node();
+    if (rootNode.parentElement && this._fit) {
+      var styles = window.getComputedStyle(rootNode.parentElement);
+      var padding = parseFloat(styles.paddingLeft) +
+                  parseFloat(styles.paddingRight);
+
+      this.width(rootNode.parentElement.clientWidth - padding);
+      this.height(this.width() / this.aspect());
+    }
+
+    this.root(rootEl);
+
+    this.root().attr('width', this.width())
+              .attr('height', this.height());
+
     // capture the data on the selection
-    this._g = this._root
+    this.g(this.root()
                 .append('g')
-                .attr('transform', this._translate());
+                .attr('transform', this._translate()));
 
     // draw the chart title if we have one
-    if (this._title) {
+    if (this.title()) {
       this.g()
         .append('text')
         .attr('class', 'title')
@@ -127,8 +84,18 @@ class BaseChart {
   }
 
   update() {
-    if (!this._g) {
+    if (!this.g()) {
       return this.render();
+    }
+    // potently resize the chart
+    if (this.fit()) {
+      var rootNode = this.root().node();
+      if (rootNode.parentElement) {
+        this.width(rootNode.parentElement.clientWidth);
+        this.height(this.width() / this.aspect());
+        this.root().attr('width', this.width())
+              .attr('height', this.height());
+      }
     }
     this.plot();
     this.decorate();
@@ -157,9 +124,10 @@ class BaseChart {
     this.root().on('mousemove', function(d, i) {
       var mouse = d3.mouse(this);
       var margin = self.margin();
+      var size = self.size();
       var coords = {
-        x: Math.min(Math.max(mouse[0] - margin.left, 0), self.width()),
-        y: Math.min(Math.max(mouse[1] - margin.top, 0), self.width())
+        x: Math.min(Math.max(mouse[0] - margin.left, 0), size.width),
+        y: Math.min(Math.max(mouse[1] - margin.top, 0), size.width)
       };
       fn.call(self, coords);
     });

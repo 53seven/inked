@@ -9,10 +9,14 @@ class LineChart extends Bivariate {
 
   constructor(opts) {
     super(opts);
-    this._axes = new Axes(this);
-    this._stroke = (d,i) => {
+    opts.stroke = opts.stroke || ((d,i) => {
       return d3.schemeCategory20[i];
-    };
+    });
+    this.extend({
+      'label': 'path',
+      'stroke': 'simple'
+    }, opts);
+    this._axes = new Axes(this);
   }
 
   plot() {
@@ -27,12 +31,13 @@ class LineChart extends Bivariate {
     // flatten the data so that we can have the scales line up
     var flat_data = _.flatten(data);
 
+    var size = this.size();
     var x = this.x();
-    x.range([0, this.width()]);
+    x.range([0, size.width]);
     x.fit(flat_data);
 
     var y = this.y();
-    y.range([this.height(), 0]);
+    y.range([size.height, 0]);
     y.fit(flat_data);
 
     var line = d3.line()
@@ -87,7 +92,7 @@ class LineChart extends Bivariate {
 
     this.onmousemove((coords) => {
       var hoverX = this.x().scale().invert(coords.x);
-      var bisect = d3.bisector(this.xVal()).right;
+      var bisect = d3.bisector(this.x_val()).right;
       // get the dots we want to draw
       var hoveredDots = data.map((d) => {
         var index = bisect(d, hoverX, 1),
@@ -156,22 +161,6 @@ class LineChart extends Bivariate {
     this.onmouseout(() => {
       annotationContainer.selectAll('*').remove();
     });
-  }
-
-  label(val) {
-    if (!val) {
-      return this._label;
-    }
-    this._label = typeof val === 'string' ? function(d) { return _.at(d, val)[0]; } : val;
-    return this;
-  }
-
-  stroke(val) {
-    if (!val) {
-      return this._stroke;
-    }
-    this._stroke = val;
-    return this;
   }
 
   decorate() {

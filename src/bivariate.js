@@ -5,42 +5,29 @@ import {default as Measure} from './measure';
 class Bivariate extends BaseChart {
 
   constructor(opts) {
-    opts = opts || {};
     super(opts);
-    this.x(opts.x || new Measure());
-    this.y(opts.y || new Measure());
-  }
-
-  x(val) {
-    if (!val) {
-      return this._x;
-    }
-    this._x = val;
-    return this;
-  }
-
-  xVal(val) {
-    if (!val) {
-      return this._x.val();
-    }
-    this._x.val(val);
-    return this;
-  }
-
-  y(val) {
-    if (!val) {
-      return this._y;
-    }
-    this._y = val;
-    return this;
-  }
-
-  yVal(val) {
-    if (!val) {
-      return this._y.val();
-    }
-    this._y.val(val);
-    return this;
+    opts.x = opts.x || new Measure();
+    opts.y = opts.y || new Measure();
+    this.extend({
+      x: 'simple',
+      y: 'simple',
+      x_val: {
+        get: () => {
+          return this.x().val();
+        },
+        set: (val) => {
+          this.x().val(val);
+        }
+      },
+      y_val: {
+        get: () => {
+          return this.y().val();
+        },
+        set: (val) => {
+          this.y().val(val);
+        }
+      }
+    }, opts);
   }
 
 }
