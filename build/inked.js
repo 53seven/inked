@@ -1,10 +1,8 @@
 (function (global, factory) {
-	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('MutableProp')) :
-	typeof define === 'function' && define.amd ? define('inked', ['exports', 'MutableProp'], factory) :
-	(factory((global.inked = global.inked || {}),global.MutableProp));
-}(this, (function (exports,MutableProp) { 'use strict';
-
-MutableProp = 'default' in MutableProp ? MutableProp['default'] : MutableProp;
+	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
+	typeof define === 'function' && define.amd ? define('inked', ['exports'], factory) :
+	(factory((global.inked = global.inked || {})));
+}(this, (function (exports) { 'use strict';
 
 var xhtml = "http://www.w3.org/1999/xhtml";
 
@@ -7624,187 +7622,6 @@ var edges;
 
 function triangleArea(a, b, c) {
   return (a[0] - c[0]) * (b[1] - a[1]) - (a[0] - b[0]) * (c[1] - a[1]);
-}
-
-// base_chart.js
-// we need this to stop rollup from tree shaking...
-var t = transition().duration(500);
-
-class BaseChart extends MutableProp {
-
-  constructor(opts) {
-    super(opts);
-    this.extend(['width', 'height', 'aspect', 'fit', 'margin', 'el', 'root', 'data', 'title', 'g'], opts);
-    /*opts = opts || {};
-    this._width = opts.width || 0;
-    this._height = opts.height || 0;
-    this._aspect = opts.aspect || 2;
-    this._fit = opts.fit || (this._width === 0);
-    this._margin = opts.margin || {top: 0, left:0, bottom: 0, right: 0};
-    this._el = opts.el || 'body';
-    this._root = opts.root || null;
-    this._data = opts.data || null;
-    this._title = opts.title || null;*/
-  }
-
-  outerSize() {
-    return {
-      width: this.width(),
-      height: this.height()
-    };
-  }
-
-  innerWidth() {
-    return this.width() - this.margin().left - this.margin().right;
-  }
-
-  innerHeight() {
-    return this.height() - this.margin().top - this.margin().bottom;
-  }
-
-  size() {
-    return {
-      width: this.innerWidth(),
-      height: this.innerHeight()
-    };
-  }
-
-  /*g() {
-    return this._g;
-  }
-
-  root(val) {
-    if (!val) {
-      return this._root;
-    }
-    this._root = val;
-    return this;
-  }
-
-  title(val) {
-    if (!val) {
-      return this._title;
-    }
-    this._title = val;
-    return this;
-  }
-
-  data(val) {
-    if (!val) {
-      return this._data;
-    }
-    this._data = val;
-    return this;
-  }*/
-
-  render() {
-    // base chart only needs to do one thing
-    // and that is create the g element correctly
-    // NOTE: no arrow function since we want the `this` (sigh)
-    let rootEl;
-    if (!this.root()) {
-      rootEl = select(this.el()).append('svg');
-    } else {
-      rootEl = select(this.root());
-    }
-
-    console.log(rootEl);
-    var rootNode = rootEl.node();
-    if (rootNode.parentElement && this._fit) {
-      this.width(rootNode.parentElement.clientWidth);
-      this.height(this.width() / this.aspect());
-    } else {
-      console.log('not fitting');
-      console.log(rootNode.parentElement, this._fit);
-    }
-
-    this.root(rootEl);
-
-    this.root().attr('width', this.width())
-              .attr('height', this.height());
-
-    // capture the data on the selection
-    this.g(this.root()
-                .append('g')
-                .attr('transform', this._translate()));
-
-    // draw the chart title if we have one
-    if (this.title()) {
-      this.g()
-        .append('text')
-        .attr('class', 'title')
-        .attr('dy', '-0.35em')
-        .text(this.title());
-    }
-
-    // plot should draw/update the data
-    this.plot();
-    // and decorate should draw/update non data elements (such as axes)
-    this.decorate();
-    return this;
-  }
-
-  update() {
-    if (!this.g()) {
-      return this.render();
-    }
-    // potently resize the chart
-    if (this.fit()) {
-      var rootNode = this.root().node();
-      if (rootNode.parentElement) {
-        this.width(rootNode.parentElement.clientWidth);
-        this.height(this.width() / this.aspect());
-        this.root().attr('width', this.width())
-              .attr('height', this.height());
-      }
-    }
-    this.plot();
-    this.decorate();
-    return this;
-  }
-
-  position(node, childCell, parentCell) {
-    var childBB = node.getBBox();
-    var parentBB = this.size();
-    var x = parentBB.width - childBB.width;
-    return `translate(${x}, 0)`;
-  }
-
-  one(selector$$1, parent) {
-    var elData = selector$$1.split(/\./g);
-    // creates just one element with no data
-    var elem = (parent || this.g()).selectAll(selector$$1).data([null]);
-    return elem.enter()
-      .append(elData.shift())
-      .classed(elData.join(' '), true)
-      .merge(elem);
-  }
-
-  onmousemove(fn) {
-    var self = this;
-    this.root().on('mousemove', function(d, i) {
-      var mouse$$1 = mouse(this);
-      var margin = self.margin();
-      var size = self.size();
-      var coords = {
-        x: Math.min(Math.max(mouse$$1[0] - margin.left, 0), size.width),
-        y: Math.min(Math.max(mouse$$1[1] - margin.top, 0), size.width)
-      };
-      fn.call(self, coords);
-    });
-  }
-
-  onmouseout(fn) {
-    var self = this;
-    this.root().on('mouseout', function(d, i) {
-      fn.call(self);
-    });
-  }
-
-  // utility function to hide the kludge
-  _translate() {
-    return 'translate(' + this.margin().left + ',' + this.margin().top + ')';
-  }
 }
 
 /** Detect free variable `global` from Node.js. */
@@ -25674,6 +25491,215 @@ if (symIterator$1) {
  * Copyright Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
  */
 
+class MutableProp {
+
+  constructor() {
+    this.__chartProperties = [];
+  }
+
+  addProp(name, type) {
+    if (this[name]) {
+      throw new Error(`property ${name} already exists`);
+    }
+    if (name === '_chartProperties') {
+      throw new Error('name _chartProperties is protected');
+    }
+    if (!type || type === 'simple') {
+      this[name] = (val) => {
+        if (!isUndefined(val)) {
+          this[`_${name}`] = val;
+          return this;
+        }
+        return this[`_${name}`];
+      };
+    } else if (type === 'path') {
+      this[name] = (val) => {
+        if (!isUndefined(val)) {
+          this[`_${name}`] = typeof val === 'string' ? function(d) { return at(d, val)[0]; } : val;
+          return this;
+        }
+        return this[`_${name}`];
+      };
+    } else if (typeof type === 'object') {
+      this[name] = (val) => {
+        if (!isUndefined(val)) {
+          type.set(val);
+          return this;
+        }
+        return type.get();
+      };
+    }
+    this.__chartProperties.push(name);
+  }
+
+  props() {
+    return this.__chartProperties;
+  }
+
+  extend(def, defaults$$1) {
+    let keysToApply;
+    if (isArray(def)) {
+      keysToApply = def;
+      forEach(def, (name) => {
+        this.addProp(name);
+      });
+    } else {
+      keysToApply = Object.keys(def);
+      forEach(def, (type, name) => {
+        this.addProp(name, type);
+      });
+    }
+
+    keysToApply.forEach((key) => {
+      this[key](defaults$$1[key]);
+    });
+  }
+
+}
+
+// base_chart.js
+// we need this to stop rollup from tree shaking...
+var t = transition().duration(500);
+
+class BaseChart extends MutableProp {
+
+  constructor(opts) {
+    super(opts);
+    this.extend(['width', 'height', 'aspect', 'fit', 'margin', 'el', 'root', 'data', 'title', 'g'], opts);
+  }
+
+  outerSize() {
+    return {
+      width: this.width(),
+      height: this.height()
+    };
+  }
+
+  innerWidth() {
+    return this.width() - this.margin().left - this.margin().right;
+  }
+
+  innerHeight() {
+    return this.height() - this.margin().top - this.margin().bottom;
+  }
+
+  size() {
+    return {
+      width: this.innerWidth(),
+      height: this.innerHeight()
+    };
+  }
+
+  render() {
+    // base chart only needs to do one thing
+    // and that is create the g element correctly
+    // NOTE: no arrow function since we want the `this` (sigh)
+    let rootEl;
+    if (!this.root()) {
+      rootEl = select(this.el()).append('svg');
+    } else {
+      rootEl = select(this.root());
+    }
+
+    var rootNode = rootEl.node();
+    if (rootNode.parentElement && this._fit) {
+      var styles = window.getComputedStyle(rootNode.parentElement);
+      var padding = parseFloat(styles.paddingLeft) +
+                  parseFloat(styles.paddingRight);
+
+      this.width(rootNode.parentElement.clientWidth - padding);
+      this.height(this.width() / this.aspect());
+    }
+
+    this.root(rootEl);
+
+    this.root().attr('width', this.width())
+              .attr('height', this.height());
+
+    // capture the data on the selection
+    this.g(this.root()
+                .append('g')
+                .attr('transform', this._translate()));
+
+    // draw the chart title if we have one
+    if (this.title()) {
+      this.g()
+        .append('text')
+        .attr('class', 'title')
+        .attr('dy', '-0.35em')
+        .text(this.title());
+    }
+
+    // plot should draw/update the data
+    this.plot();
+    // and decorate should draw/update non data elements (such as axes)
+    this.decorate();
+    return this;
+  }
+
+  update() {
+    if (!this.g()) {
+      return this.render();
+    }
+    // potently resize the chart
+    if (this.fit()) {
+      var rootNode = this.root().node();
+      if (rootNode.parentElement) {
+        this.width(rootNode.parentElement.clientWidth);
+        this.height(this.width() / this.aspect());
+        this.root().attr('width', this.width())
+              .attr('height', this.height());
+      }
+    }
+    this.plot();
+    this.decorate();
+    return this;
+  }
+
+  position(node, childCell, parentCell) {
+    var childBB = node.getBBox();
+    var parentBB = this.size();
+    var x = parentBB.width - childBB.width;
+    return `translate(${x}, 0)`;
+  }
+
+  one(selector$$1, parent) {
+    var elData = selector$$1.split(/\./g);
+    // creates just one element with no data
+    var elem = (parent || this.g()).selectAll(selector$$1).data([null]);
+    return elem.enter()
+      .append(elData.shift())
+      .classed(elData.join(' '), true)
+      .merge(elem);
+  }
+
+  onmousemove(fn) {
+    var self = this;
+    this.root().on('mousemove', function(d, i) {
+      var mouse$$1 = mouse(this);
+      var margin = self.margin();
+      var size = self.size();
+      var coords = {
+        x: Math.min(Math.max(mouse$$1[0] - margin.left, 0), size.width),
+        y: Math.min(Math.max(mouse$$1[1] - margin.top, 0), size.width)
+      };
+      fn.call(self, coords);
+    });
+  }
+
+  onmouseout(fn) {
+    var self = this;
+    this.root().on('mouseout', function(d, i) {
+      fn.call(self);
+    });
+  }
+
+  // utility function to hide the kludge
+  _translate() {
+    return 'translate(' + this.margin().left + ',' + this.margin().top + ')';
+  }
+}
+
 // measure.js
 // A measure class acts as a bridge between a data's vals and scales
 // Generally, this makes it easy to apply the same scale to several charts
@@ -25789,41 +25815,7 @@ class Bivariate extends BaseChart {
         }
       }
     }, opts);
-    //this.x(opts.x || new Measure());
-    //this.y(opts.y || new Measure());
   }
-
-  /*x(val) {
-    if (!val) {
-      return this._x;
-    }
-    this._x = val;
-    return this;
-  }
-
-  xVal(val) {
-    if (!val) {
-      return this._x.val();
-    }
-    this._x.val(val);
-    return this;
-  }
-
-  y(val) {
-    if (!val) {
-      return this._y;
-    }
-    this._y = val;
-    return this;
-  }
-
-  yVal(val) {
-    if (!val) {
-      return this._y.val();
-    }
-    this._y.val(val);
-    return this;
-  }*/
 
 }
 
@@ -25875,7 +25867,7 @@ class Axes {
     var axis = axisBottom().scale(measure.scale());
     this._bottom_axis = this._parent.g().append('g')
         .attr('class', 'bottom axis')
-        .attr('transform', 'translate(0,' + this._parent.height() + ')')
+        .attr('transform', 'translate(0,' + this._parent.innerHeight() + ')')
         .call(axis);
   }
 
@@ -25931,10 +25923,14 @@ class LineChart extends Bivariate {
 
   constructor(opts) {
     super(opts);
-    this._axes = new Axes(this);
-    this._stroke = (d,i) => {
+    opts.stroke = opts.stroke || ((d,i) => {
       return category20[i];
-    };
+    });
+    this.extend({
+      'label': 'path',
+      'stroke': 'simple'
+    }, opts);
+    this._axes = new Axes(this);
   }
 
   plot() {
@@ -25949,12 +25945,13 @@ class LineChart extends Bivariate {
     // flatten the data so that we can have the scales line up
     var flat_data = flatten(data);
 
+    var size$$1 = this.size();
     var x = this.x();
-    x.range([0, this.width()]);
+    x.range([0, size$$1.width]);
     x.fit(flat_data);
 
     var y = this.y();
-    y.range([this.height(), 0]);
+    y.range([size$$1.height, 0]);
     y.fit(flat_data);
 
     var line$$1 = line()
@@ -26009,7 +26006,7 @@ class LineChart extends Bivariate {
 
     this.onmousemove((coords) => {
       var hoverX = this.x().scale().invert(coords.x);
-      var bisect$$1 = bisector(this.xVal()).right;
+      var bisect$$1 = bisector(this.x_val()).right;
       // get the dots we want to draw
       var hoveredDots = data.map((d) => {
         var index = bisect$$1(d, hoverX, 1),
@@ -26078,22 +26075,6 @@ class LineChart extends Bivariate {
     this.onmouseout(() => {
       annotationContainer.selectAll('*').remove();
     });
-  }
-
-  label(val) {
-    if (!val) {
-      return this._label;
-    }
-    this._label = typeof val === 'string' ? function(d) { return at(d, val)[0]; } : val;
-    return this;
-  }
-
-  stroke(val) {
-    if (!val) {
-      return this._stroke;
-    }
-    this._stroke = val;
-    return this;
   }
 
   decorate() {
@@ -26274,10 +26255,10 @@ class ScatterChart extends Bivariate {
 
 }
 
-class MutableProp$1 {
+class MutableProp$2 {
 
   constructor() {
-
+    this.__chartProperties = [];
   }
 
   addProp(name, type) {
@@ -26289,7 +26270,7 @@ class MutableProp$1 {
     }
     if (!type || type === 'simple') {
       this[name] = (val) => {
-        if (isUndefined(val)) {
+        if (!isUndefined(val)) {
           this[`_${name}`] = val;
           return this;
         }
@@ -26297,7 +26278,7 @@ class MutableProp$1 {
       };
     } else if (type === 'path') {
       this[name] = (val) => {
-        if (isUndefined(val)) {
+        if (!isUndefined(val)) {
           this[`_${name}`] = typeof val === 'string' ? function(d) { return at(d, val)[0]; } : val;
           return this;
         }
@@ -26305,7 +26286,7 @@ class MutableProp$1 {
       };
     } else if (typeof type === 'object') {
       this[name] = (val) => {
-        if (isUndefined(val)) {
+        if (!isUndefined(val)) {
           type.set(val);
           return this;
         }
@@ -26348,7 +26329,7 @@ exports.GroupedHistogram = GroupedHistogram;
 exports.ScatterChart = ScatterChart;
 exports.Measure = Measure;
 exports.Bivariate = Bivariate;
-exports.MutableProp = MutableProp$1;
+exports.MutableProp = MutableProp$2;
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
