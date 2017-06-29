@@ -26255,72 +26255,6 @@ class ScatterChart extends Bivariate {
 
 }
 
-class MutableProp$2 {
-
-  constructor() {
-    this.__chartProperties = [];
-  }
-
-  addProp(name, type) {
-    if (this[name]) {
-      throw new Error(`property ${name} already exists`);
-    }
-    if (name === '_chartProperties') {
-      throw new Error('name _chartProperties is protected');
-    }
-    if (!type || type === 'simple') {
-      this[name] = (val) => {
-        if (!isUndefined(val)) {
-          this[`_${name}`] = val;
-          return this;
-        }
-        return this[`_${name}`];
-      };
-    } else if (type === 'path') {
-      this[name] = (val) => {
-        if (!isUndefined(val)) {
-          this[`_${name}`] = typeof val === 'string' ? function(d) { return at(d, val)[0]; } : val;
-          return this;
-        }
-        return this[`_${name}`];
-      };
-    } else if (typeof type === 'object') {
-      this[name] = (val) => {
-        if (!isUndefined(val)) {
-          type.set(val);
-          return this;
-        }
-        return type.get();
-      };
-    }
-    this.__chartProperties.push(name);
-  }
-
-  props() {
-    return this.__chartProperties;
-  }
-
-  extend(def, defaults$$1) {
-    let keysToApply;
-    if (isArray(def)) {
-      keysToApply = def;
-      forEach(def, (name) => {
-        this.addProp(name);
-      });
-    } else {
-      keysToApply = Object.keys(def);
-      forEach(def, (type, name) => {
-        this.addProp(name, type);
-      });
-    }
-
-    keysToApply.forEach((key) => {
-      this[key](defaults$$1[key]);
-    });
-  }
-
-}
-
 exports.BaseChart = BaseChart;
 exports.LineChart = LineChart;
 exports.TimeSeries = TimeSeries;
@@ -26329,7 +26263,7 @@ exports.GroupedHistogram = GroupedHistogram;
 exports.ScatterChart = ScatterChart;
 exports.Measure = Measure;
 exports.Bivariate = Bivariate;
-exports.MutableProp = MutableProp$2;
+exports.MutableProp = MutableProp;
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
