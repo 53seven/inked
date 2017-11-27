@@ -122,12 +122,12 @@ class BaseChart extends MutableProp {
   onmousemove(fn) {
     var self = this;
     this.root().on('mousemove', function(d, i) {
-      var mouse = d3.mouse(this);
+      var mouse_pos = d3.mouse(this);
       var margin = self.margin();
       var size = self.size();
       var coords = {
-        x: Math.min(Math.max(mouse[0] - margin.left, 0), size.width),
-        y: Math.min(Math.max(mouse[1] - margin.top, 0), size.width)
+        x: Math.min(Math.max(mouse_pos[0] - margin.left, 0), size.width),
+        y: Math.min(Math.max(mouse_pos[1] - margin.top, 0), size.width)
       };
       fn.call(self, coords);
     });

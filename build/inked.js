@@ -25954,7 +25954,7 @@ class LineChart extends Bivariate {
     y.range([size$$1.height, 0]);
     y.fit(flat_data);
 
-    var line$$1 = line()
+    var line_path = line()
         .x(x.m())
         .y(y.m())
         .curve(catmullRom.alpha(0.5));
@@ -25964,15 +25964,15 @@ class LineChart extends Bivariate {
         .data(data);
 
     path$$1.enter().append('path')
-        .attr('d', line$$1)
+        .attr('d', line_path)
         .attr('class', 'line')
         .style('stroke', this.stroke());
 
 
     path$$1.transition()
         .duration(1000)
-        .attr('d', line$$1)
-        .attrTween('d', pathTween(line$$1, 25));
+        .attr('d', line_path)
+        .attrTween('d', pathTween(line_path, 25));
 
     if (this._label) {
       var labelContainer = this.one('g.labelContainer');

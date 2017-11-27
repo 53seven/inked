@@ -40,7 +40,7 @@ class LineChart extends Bivariate {
     y.range([size.height, 0]);
     y.fit(flat_data);
 
-    var line = d3.line()
+    var line_path = d3.line()
         .x(x.m())
         .y(y.m())
         .curve(d3.curveCatmullRom.alpha(0.5));
@@ -50,15 +50,15 @@ class LineChart extends Bivariate {
         .data(data);
 
     path.enter().append('path')
-        .attr('d', line)
+        .attr('d', line_path)
         .attr('class', 'line')
         .style('stroke', this.stroke());
 
 
     path.transition()
         .duration(1000)
-        .attr('d', line)
-        .attrTween('d', pathTween(line, 25));
+        .attr('d', line_path)
+        .attrTween('d', pathTween(line_path, 25));
 
     if (this._label) {
       var labelContainer = this.one('g.labelContainer');
