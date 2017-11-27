@@ -25645,8 +25645,13 @@ class BaseChart extends MutableProp {
     if (this.fit()) {
       var rootNode = this.root().node();
       if (rootNode.parentElement) {
-        this.width(rootNode.parentElement.clientWidth);
+        var styles = window.getComputedStyle(rootNode.parentElement);
+        var padding = parseFloat(styles.paddingLeft) +
+                    parseFloat(styles.paddingRight);
+
+        this.width(rootNode.parentElement.clientWidth - padding);
         this.height(this.width() / this.aspect());
+
         this.root().attr('width', this.width())
               .attr('height', this.height());
       }
